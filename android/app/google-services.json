@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "877967297827",
+    "project_id": "gamifikasi-19505",
+    "storage_bucket": "gamifikasi-19505.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877967297827:android:e46bdb98924cf55a9dd096",
+        "android_client_info": {
+          "package_name": "com.example.gamifikasi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBM_An7jdbMsa1naVuYBVyGa1vKIJdNug4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
