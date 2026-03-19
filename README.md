@@ -142,6 +142,8 @@ Kontribusi sangat terbuka! Silakan buat _issue_ atau _pull request_ jika ingin m
 
 ---
 
+![alt text](../portofolio/portofolio/gamifikasi.png)
+
 ## 📄 Lisensi
 
 Proyek ini menggunakan lisensi [MIT](LICENSE).
