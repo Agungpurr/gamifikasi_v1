@@ -141,8 +141,17 @@ Kontribusi sangat terbuka! Silakan buat _issue_ atau _pull request_ jika ingin m
 5. Buat Pull Request
 
 ---
+<img width="531" height="1126" alt="Screenshot 2026-03-19 123816" src="https://github.com/user-attachments/assets/c91f2928-3e62-4290-8196-dbc60fb6e3b6" />
+<img width="536" height="1124" alt="image" src="https://github.com/user-attachments/assets/c5342497-14e6-4443-8692-45052ea7129e" />
+<img width="526" height="1116" alt="image" src="https://github.com/user-attachments/assets/fb87bd2e-4d44-45fc-9484-0355648d2c8d" />
+<img width="525" height="1135" alt="image" src="https://github.com/user-attachments/assets/170bc86c-73a4-424b-b161-d1b85cd7b798" />
+<img width="527" height="1112" alt="image" src="https://github.com/user-attachments/assets/d5499e47-98f0-4d0f-90d0-129a2af0bbbe" />
+<img width="537" height="1134" alt="image" src="https://github.com/user-attachments/assets/23124ae9-0dc5-446b-9591-574f1b7dd0c8" />
+<img width="526" height="1131" alt="image" src="https://github.com/user-attachments/assets/8fef5f0e-2332-4104-bbb8-a3dbd089a0bc" />
 
-![alt text](../portofolio/portofolio/gamifikasi.png)
+
+
+
 
 ## 📄 Lisensi
 
