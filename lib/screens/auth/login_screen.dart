@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_provider.dart';
 import '../../utils/app_theme.dart';
 import 'register_screen.dart';
+import '../admin/admin_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -68,9 +69,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Header
                 Column(
                   children: [
-                    const Text('🎓', style: TextStyle(fontSize: 64))
-                        .animate()
-                        .scale(duration: 500.ms, curve: Curves.elasticOut),
+                    GestureDetector(
+                      onLongPress: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AdminLoginScreen()),
+                        );
+                      },
+                      child: const Text('🎓', style: TextStyle(fontSize: 64))
+                          .animate()
+                          .scale(duration: 500.ms, curve: Curves.elasticOut),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'EduKids',
