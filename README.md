@@ -33,6 +33,13 @@ lib/
 │   ├── question_model.dart
 │   └── user_model.dart
 ├── screens/
+│   ├── admin 
+│   │    ├── admin_dashboard_screen.dart
+│   │    ├── manage_quiz_screen.dart
+│   │    ├── add_question_screen.dart
+│   │    ├── edit_question_screen.dart
+│   │    ├── manage_user_screen.dart
+│   │    └── manage_badge_screen.dart
 │   ├── auth/
 │   │   ├── login_screen.dart
 │   │   └── register_screen.dart
