@@ -153,8 +153,8 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                     color: AppColors.accent,
                   ),
                   _StatCard(
-                    label: 'Kelas',
-                    value: '6',
+                    label: 'Level',
+                    value: '12',
                     icon: Icons.school,
                     color: AppColors.secondary,
                   ),

@@ -357,7 +357,7 @@ class _QuestionCard extends StatelessWidget {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text('Kelas ${question.grade}',
+                  child: Text('Level ${question.grade}',
                       style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ),
                 const SizedBox(width: 6),
@@ -492,7 +492,12 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
       _grade = q.grade;
       _difficulty = q.difficulty;
       _correctIndex = q.correctIndex;
-      _points = q.points;
+      _points = switch (q.difficulty) {
+        'easy' => 10,
+        'medium' => 20,
+        'hard' => 35,
+        _ => 10,
+      };
       for (int i = 0; i < q.options.length && i < 4; i++) {
         _optionCtrls[i].text = q.options[i];
       }
@@ -574,8 +579,21 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _grade,
-                    decoration: const InputDecoration(labelText: 'Kelas'),
-                    items: ['1', '2', '3', '4', '5', '6']
+                    decoration: const InputDecoration(labelText: 'Level'),
+                    items: [
+                      '1',
+                      '2',
+                      '3',
+                      '4',
+                      '5',
+                      '6',
+                      '7',
+                      '8',
+                      '9',
+                      '10',
+                      '11',
+                      '12'
+                    ]
                         .map((g) =>
                             DropdownMenuItem(value: g, child: Text('Kelas $g')))
                         .toList(),
@@ -632,33 +650,59 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                         ),
                       )),
               const SizedBox(height: 8),
-
               // Tingkat & Poin
-              Row(children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _difficulty,
-                    decoration:
-                        const InputDecoration(labelText: 'Tingkat Kesulitan'),
-                    items: const [
-                      DropdownMenuItem(value: 'easy', child: Text('Mudah')),
-                      DropdownMenuItem(value: 'medium', child: Text('Sedang')),
-                      DropdownMenuItem(value: 'hard', child: Text('Sulit')),
-                    ],
-                    onChanged: (v) => setState(() => _difficulty = v!),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _difficulty,
+                      decoration:
+                          const InputDecoration(labelText: 'Tingkat Kesulitan'),
+                      items: const [
+                        DropdownMenuItem(value: 'easy', child: Text('Mudah')),
+                        DropdownMenuItem(
+                            value: 'medium', child: Text('Sedang')),
+                        DropdownMenuItem(value: 'hard', child: Text('Sulit')),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _difficulty = v!;
+                        _points = switch (v) {
+                          'easy' => 10,
+                          'medium' => 20,
+                          'hard' => 35,
+                          _ => 10,
+                        };
+                      }),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    initialValue: _points.toString(),
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Poin'),
-                    onChanged: (v) =>
-                        setState(() => _points = int.tryParse(v) ?? 10),
+                  const SizedBox(width: 12),
+                  // Tampilan poin otomatis (read-only) ← GANTI COMMENT DENGAN INI
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          '$_points',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const Text('poin',
+                            style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
               const SizedBox(height: 12),
 
               // Penjelasan
