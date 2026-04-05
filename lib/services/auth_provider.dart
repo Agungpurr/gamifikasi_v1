@@ -25,7 +25,7 @@ class AuthProvider extends ChangeNotifier {
     _firebaseUser = user;
     if (user != null) {
       await _loadUserModel(user.uid);
-      await FirebaseService.updateStreak(user.uid);
+      // await FirebaseService.updateStreak(user.uid);
     } else {
       _userModel = null;
     }
@@ -80,7 +80,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await FirebaseService.loginWithEmail(email, password);
+      final credential = await FirebaseService.loginWithEmail(email, password);
+
+      // ✅ Update streak hanya saat login
+      if (credential?.user != null) {
+        await FirebaseService.updateStreak(credential!.user!.uid);
+        await _loadUserModel(credential.user!.uid);
+      }
       _isLoading = false;
       notifyListeners();
       return true;
