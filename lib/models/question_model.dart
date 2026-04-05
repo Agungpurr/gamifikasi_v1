@@ -1,7 +1,7 @@
 class QuestionModel {
   final String id;
   final String subject;
-  final String grade; // kelas 1-6
+  final String grade;
   final String question;
   final List<String> options;
   final int correctIndex;

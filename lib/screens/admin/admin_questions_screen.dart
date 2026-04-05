@@ -167,10 +167,23 @@ class _AdminQuestionsScreenState extends State<AdminQuestionsScreen> {
                       decoration: const InputDecoration(
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 12, vertical: 10),
-                          hintText: 'Semua Kelas'),
-                      items: ['1', '2', '3', '4', '5', '6']
+                          hintText: 'Semua Level'),
+                      items: [
+                        '1',
+                        '2',
+                        '3',
+                        '4',
+                        '5',
+                        '6',
+                        '7',
+                        '8',
+                        '9',
+                        '10',
+                        '11',
+                        '12'
+                      ]
                           .map((g) => DropdownMenuItem(
-                              value: g, child: Text('Kelas $g')))
+                              value: g, child: Text('Level $g')))
                           .toList(),
                       onChanged: (val) {
                         setState(() => _filterGrade = val ?? '');

@@ -1,6 +1,7 @@
 // lib/screens/quiz/quiz_screen.dart
 
 import 'dart:async';
+import 'package:edu_kids_app/services/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
@@ -39,6 +40,7 @@ class _QuizScreenState extends State<QuizScreen>
   @override
   void initState() {
     super.initState();
+    AudioService.playQuizBgm();
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
     _shakeController = AnimationController(
@@ -48,6 +50,7 @@ class _QuizScreenState extends State<QuizScreen>
 
   @override
   void dispose() {
+    AudioService.playHomeBgm();
     _timer?.cancel();
     _confettiController.dispose();
     _shakeController.dispose();
@@ -226,8 +229,10 @@ class _QuizScreenState extends State<QuizScreen>
       if (isCorrect) {
         _score += question.points;
         _correctAnswers++;
+        AudioService.playCorrect();
         _confettiController.play();
       } else {
+        AudioService.playWrong();
         _shakeController.forward(from: 0);
       }
     });
@@ -261,6 +266,13 @@ class _QuizScreenState extends State<QuizScreen>
         timeTaken: _totalTime,
       );
       await auth.addPoints(_score, widget.subject);
+
+      // Cek Perfect score - semua jawaban benar
+      if (_correctAnswers == _questions.length &&
+          !auth.userModel!.badges.contains('perfect_score')) {
+        await FirebaseService.addBadge(auth.firebaseUser!.uid, 'perfect_score');
+        await auth.refreshUserModel();
+      }
     }
 
     if (mounted) {

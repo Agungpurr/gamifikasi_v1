@@ -37,7 +37,7 @@ class NotificationService {
 
     // Minta permission (Android 13+)
     await _plugin
-        .resolvePlatformSpecificImplementation
+        .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
   }
@@ -59,13 +59,31 @@ class NotificationService {
 
   static Future<void> scheduleDailyReminder() async {
     final messages = [
-      ('📚 Yuk Belajar Hari Ini!', 'Jangan lupa kuis hari ini. Streak kamu menunggu! 🔥'),
-      ('🚀 Semangat Pagi!', 'Mulai hari dengan belajar 10 menit. Kamu pasti bisa!'),
-      ('⭐ Hari Baru, Ilmu Baru!', 'Buka app dan selesaikan satu kuis. Mudah banget!'),
+      (
+        '📚 Yuk Belajar Hari Ini!',
+        'Jangan lupa kuis hari ini. Streak kamu menunggu! 🔥'
+      ),
+      (
+        '🚀 Semangat Pagi!',
+        'Mulai hari dengan belajar 10 menit. Kamu pasti bisa!'
+      ),
+      (
+        '⭐ Hari Baru, Ilmu Baru!',
+        'Buka app dan selesaikan satu kuis. Mudah banget!'
+      ),
       ('🎯 Target Hari Ini', 'Selesaikan 3 kuis dan dapatkan +50 XP Bonus!'),
-      ('🌟 Halo, Jagoan!', 'Otak kamu siap menyerap ilmu baru hari ini. Ayo mulai!'),
-      ('💪 Konsisten itu Keren!', 'Belajar sedikit tiap hari lebih baik dari belajar banyak sekali.'),
-      ('🏆 Juara Dimulai dari Sini', 'Para juara di leaderboard juga mulai dari nol. Yuk kejar!'),
+      (
+        '🌟 Halo, Jagoan!',
+        'Otak kamu siap menyerap ilmu baru hari ini. Ayo mulai!'
+      ),
+      (
+        '💪 Konsisten itu Keren!',
+        'Belajar sedikit tiap hari lebih baik dari belajar banyak sekali.'
+      ),
+      (
+        '🏆 Juara Dimulai dari Sini',
+        'Para juara di leaderboard juga mulai dari nol. Yuk kejar!'
+      ),
     ];
 
     // Pilih pesan berdasarkan hari dalam seminggu
@@ -116,10 +134,22 @@ class NotificationService {
 
   static Future<void> showMilestoneNotification(int streakDays) async {
     final milestones = {
-      3: ('🔥 Streak 3 Hari!', 'Luar biasa! Kamu sudah belajar 3 hari berturut-turut. Terus semangat!'),
-      7: ('⚡ Streak 7 Hari!', 'Wow, seminggu penuh! Kamu luar biasa! Badge "Semangat Seminggu" sudah kamu raih!'),
-      14: ('💎 Streak 2 Minggu!', 'Dua minggu tanpa henti! Kamu benar-benar juara sejati!'),
-      30: ('👑 Streak 30 Hari!', 'LUAR BIASA! Sebulan penuh belajar setiap hari. Kamu adalah legenda!'),
+      3: (
+        '🔥 Streak 3 Hari!',
+        'Luar biasa! Kamu sudah belajar 3 hari berturut-turut. Terus semangat!'
+      ),
+      7: (
+        '⚡ Streak 7 Hari!',
+        'Wow, seminggu penuh! Kamu luar biasa! Badge "Semangat Seminggu" sudah kamu raih!'
+      ),
+      14: (
+        '💎 Streak 2 Minggu!',
+        'Dua minggu tanpa henti! Kamu benar-benar juara sejati!'
+      ),
+      30: (
+        '👑 Streak 30 Hari!',
+        'LUAR BIASA! Sebulan penuh belajar setiap hari. Kamu adalah legenda!'
+      ),
     };
 
     if (!milestones.containsKey(streakDays)) return;
@@ -140,7 +170,8 @@ class NotificationService {
 
   static tz.TZDateTime _nextInstanceOf(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    var scheduled =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }

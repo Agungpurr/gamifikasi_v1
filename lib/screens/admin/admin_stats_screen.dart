@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../services/admin_service.dart';
 import '../../models/user_model.dart';
 import '../../utils/app_theme.dart';
+import '../../services/export_service.dart';
 
 class AdminStatsScreen extends StatefulWidget {
   const AdminStatsScreen({super.key});
@@ -32,6 +33,40 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
       });
   }
 
+  Future<void> _exportPdf() async {
+    try {
+      await ExportService.exportUsersPdf(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Gagal export PDF: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportExcel() async {
+    try {
+      // Tampilkan loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Menyiapkan file Excel...')),
+        );
+      }
+      await ExportService.exportUsersExcel(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Gagal export Excel: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -56,6 +91,36 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
             const SizedBox(height: 4),
             Text('Ringkasan data aplikasi',
                 style: TextStyle(color: Colors.grey[600])),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _exportPdf,
+                    icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                    label: const Text('Export PDF',
+                        style: TextStyle(color: Colors.red)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _exportExcel,
+                    icon: const Icon(Icons.table_chart, color: Colors.green),
+                    label: const Text('Export Excel',
+                        style: TextStyle(color: Colors.green)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.green),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
 
             // Stat cards
@@ -67,7 +132,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.4,
+                childAspectRatio: 1.2,
                 children: [
                   _StatCard(
                     label: 'Total User',
@@ -169,7 +234,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

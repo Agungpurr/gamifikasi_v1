@@ -341,12 +341,15 @@ class BadgesScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 1.1,
+                childAspectRatio: 0.95,
               ),
               itemCount: Badges.all.length,
               itemBuilder: (context, index) {
                 final badge = Badges.all[index];
                 final isEarned = earnedBadges.contains(badge.id);
+                final progress = user != null ? badge.getProgress(user) : 0.0;
+                final progressText =
+                    user != null ? badge.getProgressText(user) : '';
 
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
@@ -367,40 +370,56 @@ class BadgesScreen extends StatelessWidget {
                           ]
                         : [],
                   ),
+                  // Ganti seluruh Column isi badge card
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min, // ✅ Tambah ini
                     children: [
+                      // ✅ Sederhanakan — tidak perlu render 2 emoji sekaligus
                       Text(
-                        badge.emoji,
-                        style: TextStyle(
-                          fontSize: 40,
-                          color: isEarned ? null : Colors.transparent,
-                          shadows: isEarned
-                              ? null
-                              : [
-                                  Shadow(
-                                      color: Colors.grey.shade400,
-                                      blurRadius: 0)
-                                ],
-                        ),
+                        isEarned ? badge.emoji : '🔒',
+                        style: const TextStyle(fontSize: 36), // ✅ Dari 40 → 36
                       ),
-                      if (!isEarned)
-                        const Text('🔒', style: TextStyle(fontSize: 40)),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6), // ✅ Dari 8 → 6
                       Text(
                         badge.name,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                          fontSize: 12, // ✅ Dari 13 → 12
                           color: isEarned ? Colors.black87 : Colors.grey,
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6), // ✅ Dari 4 → 2
+                      // ✅ Progress bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 6,
+                          backgroundColor: Colors.grey.shade200,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            isEarned ? AppColors.accent : AppColors.primary,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
+                        progressText,
+                        style: TextStyle(
+                          fontSize: 10, // ✅ Dari 11 → 10
+                          color: isEarned ? Colors.grey : Colors.grey.shade400,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
                         badge.description,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10, // ✅ Dari 11 → 10
                           color: isEarned ? Colors.grey : Colors.grey.shade400,
                         ),
                         textAlign: TextAlign.center,
