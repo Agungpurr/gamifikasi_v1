@@ -9,6 +9,8 @@ class UserModel {
   final List<String> badges;
   final DateTime lastLoginDate;
   final DateTime createdAt;
+  final String? nisn;
+  final String? kelas;
 
   UserModel({
     required this.uid,
@@ -21,6 +23,8 @@ class UserModel {
     this.badges = const [],
     required this.lastLoginDate,
     required this.createdAt,
+    this.nisn,
+    this.kelas,
   });
 
   int get xpForCurrentLevel => (level - 1) * 100;
@@ -52,6 +56,8 @@ class UserModel {
       createdAt: map['createdAt'] != null
           ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
+      nisn: map['nisn'],
+      kelas: map['kelas'],
     );
   }
 
@@ -67,19 +73,22 @@ class UserModel {
       'badges': badges,
       'lastLoginDate': lastLoginDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'nisn': nisn,
+      'kelas': kelas,
     };
   }
 
-  UserModel copyWith({
-    String? username,
-    String? avatarId,
-    int? totalPoints,
-    int? level,
-    int? streakDays,
-    Map<String, int>? subjectProgress,
-    List<String>? badges,
-    DateTime? lastLoginDate,
-  }) {
+  UserModel copyWith(
+      {String? username,
+      String? avatarId,
+      int? totalPoints,
+      int? level,
+      int? streakDays,
+      Map<String, int>? subjectProgress,
+      List<String>? badges,
+      DateTime? lastLoginDate,
+      String? nisn,
+      String? kelas}) {
     return UserModel(
       uid: uid,
       username: username ?? this.username,
@@ -91,6 +100,8 @@ class UserModel {
       badges: badges ?? this.badges,
       lastLoginDate: lastLoginDate ?? this.lastLoginDate,
       createdAt: createdAt,
+      nisn: nisn ?? this.nisn,
+      kelas: kelas ?? this.kelas,
     );
   }
 }

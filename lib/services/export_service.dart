@@ -11,6 +11,7 @@ import 'package:excel/excel.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/user_model.dart';
 import '../services/admin_service.dart';
+import 'package:open_file/open_file.dart';
 
 class ExportService {
   static final _dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
@@ -298,17 +299,16 @@ class ExportService {
 
       setCell(0, IntCellValue(i + 1));
       setCell(1, TextCellValue(u.username));
-
-      setCell(3, IntCellValue(u.level));
-      setCell(4, IntCellValue(u.totalPoints));
-      setCell(5, IntCellValue(u.streakDays));
-      setCell(6, IntCellValue(u.subjectProgress['matematika'] ?? 0));
-      setCell(7, IntCellValue(u.subjectProgress['bahasa'] ?? 0));
-      setCell(8, IntCellValue(u.subjectProgress['ipa'] ?? 0));
-      setCell(9, IntCellValue(u.subjectProgress['ips'] ?? 0));
-      setCell(10, TextCellValue(u.badges.join(', ')));
+      setCell(2, IntCellValue(u.level));
+      setCell(3, IntCellValue(u.totalPoints));
+      setCell(4, IntCellValue(u.streakDays));
+      setCell(5, IntCellValue(u.subjectProgress['matematika'] ?? 0));
+      setCell(6, IntCellValue(u.subjectProgress['bahasa'] ?? 0));
+      setCell(7, IntCellValue(u.subjectProgress['ipa'] ?? 0));
+      setCell(8, IntCellValue(u.subjectProgress['ips'] ?? 0));
+      setCell(9, TextCellValue(u.badges.join(', ')));
       setCell(
-          11,
+          10,
           TextCellValue(
               u.createdAt != null ? _dateFormat.format(u.createdAt!) : '-'));
     }
@@ -363,16 +363,27 @@ class ExportService {
       setCell2(4, IntCellValue(points.length));
     }
 
-    // Simpan & share
+    // Simpan & buka langsung
     final bytes = excel.save()!;
     final dir = await getTemporaryDirectory();
     final fileName = 'Laporan_Siswa_${_fileDate.format(now)}.xlsx';
     final file = File('${dir.path}/$fileName');
     await file.writeAsBytes(bytes);
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Laporan Data Siswa - ${_dateFormat.format(now)}',
-    );
+// Coba buka langsung dengan app yang tersedia
+    final result = await OpenFile.open(file.path);
+    print('OpenFile result: ${result.type} - ${result.message}');
+
+// Fallback ke share kalau tidak ada app yang bisa buka
+    if (result.type != ResultType.done) {
+      await Share.shareXFiles(
+        [
+          XFile(file.path,
+              mimeType:
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        ],
+        subject: 'Laporan Data Siswa - ${_dateFormat.format(now)}',
+      );
+    }
   }
 }

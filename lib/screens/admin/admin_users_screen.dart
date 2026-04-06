@@ -53,71 +53,87 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
   void _openEditDialog(UserModel user) {
     final usernameCtrl = TextEditingController(text: user.username);
-    final pointsCtrl = TextEditingController(text: user.totalPoints.toString());
-    final levelCtrl = TextEditingController(text: user.level.toString());
-    final streakCtrl = TextEditingController(text: user.streakDays.toString());
+    final nisnCtrl = TextEditingController(text: user.nisn ?? '');
+
+    // Generate list kelas: 1A, 1B, 1C, 2A, ... 6C
+    final kelasList = [
+      for (int i = 1; i <= 6; i++)
+        for (final sub in ['A', 'B', 'C']) '$i$sub'
+    ];
+
+    String? selectedKelas =
+        (user.kelas != null && kelasList.contains(user.kelas))
+            ? user.kelas
+            : null;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit User'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: usernameCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Username', prefixIcon: Icon(Icons.person)),
-              ),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: pointsCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Total Poin'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          title: const Text('Edit User'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Username
+                TextFormField(
+                  controller: usernameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Username',
+                    prefixIcon: Icon(Icons.person),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: levelCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Level'),
+                const SizedBox(height: 12),
+
+                // NISN
+                TextFormField(
+                  controller: nisnCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  decoration: const InputDecoration(
+                    labelText: 'NISN',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    counterText: '',
                   ),
                 ),
-              ]),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: streakCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                    labelText: 'Streak Hari',
-                    prefixIcon: Icon(Icons.local_fire_department)),
-              ),
-            ],
+                const SizedBox(height: 12),
+
+                // Kelas dropdown
+                DropdownButtonFormField<String>(
+                  value: selectedKelas,
+                  decoration: const InputDecoration(
+                    labelText: 'Kelas',
+                    prefixIcon: Icon(Icons.class_outlined),
+                  ),
+                  items: kelasList
+                      .map((k) =>
+                          DropdownMenuItem(value: k, child: Text('Kelas $k')))
+                      .toList(),
+                  onChanged: (val) => setStateDialog(() => selectedKelas = val),
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await AdminService.updateUser(user.uid, {
+                  'username': usernameCtrl.text.trim(),
+                  'nisn': nisnCtrl.text.trim(),
+                  'kelas': selectedKelas ?? '',
+                });
+                if (mounted) Navigator.pop(ctx);
+                _load();
+                _showSnack('User berhasil diperbarui');
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
-          ElevatedButton(
-            onPressed: () async {
-              await AdminService.updateUser(user.uid, {
-                'username': usernameCtrl.text.trim(),
-                'totalPoints':
-                    int.tryParse(pointsCtrl.text) ?? user.totalPoints,
-                'level': int.tryParse(levelCtrl.text) ?? user.level,
-                'streakDays': int.tryParse(streakCtrl.text) ?? user.streakDays,
-              });
-              if (mounted) Navigator.pop(ctx);
-              _load();
-              _showSnack('User berhasil diperbarui');
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
       ),
     );
   }
@@ -367,6 +383,19 @@ class _UserCard extends StatelessWidget {
                 _InfoItem(Icons.book, '${user.subjectProgress.length} mapel'),
               ],
             ),
+            if (user.kelas != null || user.nisn != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  if (user.kelas != null)
+                    _InfoItem(Icons.class_outlined, 'Kelas ${user.kelas}'),
+                  if (user.kelas != null && user.nisn != null)
+                    const SizedBox(width: 16),
+                  if (user.nisn != null && user.nisn!.isNotEmpty)
+                    _InfoItem(Icons.badge_outlined, 'NISN: ${user.nisn}'),
+                ],
+              ),
+            ],
           ],
         ),
       ),
