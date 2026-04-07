@@ -16,7 +16,7 @@ class SubjectSelectScreen extends StatefulWidget {
 
 class _SubjectSelectScreenState extends State<SubjectSelectScreen> {
   String? _selectedSubject;
-  String _selectedGrade = '3';
+  String _selectedGrade = '1';
 
   @override
   void initState() {
@@ -65,13 +65,13 @@ class _SubjectSelectScreenState extends State<SubjectSelectScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Grade selector
-            Text('Kelas berapa?',
+            Text('Level berapa?',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: List.generate(6, (i) {
+                children: List.generate(12, (i) {
                   final grade = '${i + 1}';
                   final isSelected = _selectedGrade == grade;
                   return Padding(
@@ -100,7 +100,7 @@ class _SubjectSelectScreenState extends State<SubjectSelectScreen> {
                               : [],
                         ),
                         child: Text(
-                          'Kelas ${i + 1}',
+                          'Level ${i + 1}',
                           style: TextStyle(
                             color: isSelected ? Colors.white : Colors.black87,
                             fontWeight: FontWeight.w700,

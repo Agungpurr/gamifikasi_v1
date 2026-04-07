@@ -1,5 +1,6 @@
 // lib/screens/profile/profile_screen.dart
 
+import 'package:edu_kids_app/services/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -331,7 +332,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     );
                   }),
+                const SizedBox(height: 24),
+                Text('Pengaturan Suara',
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
 
+                StatefulBuilder(
+                  builder: (context, setLocalState) => Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 8)
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        SwitchListTile(
+                          title: const Text('🎵 Musik Latar',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: const Text('Musik background saat bermain'),
+                          value: AudioService.isBgmEnabled,
+                          activeColor: AppColors.primary,
+                          onChanged: (_) async {
+                            await AudioService.toggleBgm();
+                            if (AudioService.isBgmEnabled) {
+                              await AudioService.playHomeBgm();
+                            }
+                            setLocalState(() {});
+                          },
+                        ),
+                        const Divider(height: 1),
+                        SwitchListTile(
+                          title: const Text('🔊 Efek Suara',
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle:
+                              const Text('Suara benar, salah, dan notifikasi'),
+                          value: AudioService.isSfxEnabled,
+                          activeColor: AppColors.primary,
+                          onChanged: (_) async {
+                            await AudioService.toggleSfx();
+                            setLocalState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 80),
               ]),
             ),

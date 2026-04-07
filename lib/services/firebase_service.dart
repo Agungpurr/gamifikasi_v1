@@ -116,21 +116,49 @@ class FirebaseService {
     if (!doc.exists) return;
 
     final data = doc.data()!;
-    final lastLogin = DateTime.parse(
-        data['lastLoginDate'] ?? DateTime.now().toIso8601String());
-    final today = DateTime.now();
-    final difference = today.difference(lastLogin).inDays;
+
+    // Normalize ke tengah malam untuk perbandingan yang akurat
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final lastLoginRaw = data['lastLoginDate'];
+
+    // Jika belum pernah login sama sekali
+    if (lastLoginRaw == null) {
+      await userRef.update({
+        'streakDays': 1,
+        'lastLoginDate': today.toIso8601String(),
+      });
+      return;
+    }
+
+    final lastLoginParsed = DateTime.parse(lastLoginRaw);
+    final lastDay = DateTime(
+      lastLoginParsed.year,
+      lastLoginParsed.month,
+      lastLoginParsed.day,
+    );
+
+    final difference = today.difference(lastDay).inDays;
+
+    if (difference == 0) {
+      // Sudah dicatat hari ini, tidak perlu update apapun
+      return;
+    }
 
     int newStreak = data['streakDays'] ?? 0;
+
     if (difference == 1) {
+      // Hari berturut-turut
       newStreak += 1;
-    } else if (difference > 1) {
+    } else {
+      // Streak putus (skip > 1 hari)
       newStreak = 1;
     }
 
     await userRef.update({
       'streakDays': newStreak,
-      'lastLoginDate': today.toIso8601String(),
+      'lastLoginDate': today.toIso8601String(), // simpan tanggal saja (00:00)
     });
   }
 
