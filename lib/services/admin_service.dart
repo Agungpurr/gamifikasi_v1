@@ -51,6 +51,60 @@ class AdminService {
     return snap.docs.map((d) => UserModel.fromMap(d.data())).toList();
   }
 
+  // ← METHOD BARU
+  static Future<void> createUser({
+    required String adminEmail,
+    required String adminPassword,
+    required String newEmail,
+    required String newPassword,
+    required String username,
+    required String nisn,
+    required String kelas,
+  }) async {
+    try {
+      // 1. Buat akun baru di Firebase Auth
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: newEmail,
+        password: newPassword,
+      );
+
+      final newUid = credential.user!.uid;
+
+      // 2. Simpan data ke Firestore
+      await _db.collection('users').doc(newUid).set({
+        'uid': newUid,
+        'username': username,
+        'avatarId': 'avatar_1',
+        'totalPoints': 0,
+        'level': 1,
+        'streakDays': 0,
+        'subjectProgress': {},
+        'badges': [],
+        'nisn': nisn,
+        'kelas': kelas,
+        'lastLoginDate': DateTime.now().toIso8601String(),
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+
+      // 3. Sign out dari akun baru, login balik sebagai admin
+      await _auth.signOut();
+      await _auth.signInWithEmailAndPassword(
+        email: adminEmail,
+        password: adminPassword,
+      );
+    } catch (e) {
+      // Gagal di tengah jalan → pastikan admin tetap login
+      try {
+        await _auth.signOut();
+        await _auth.signInWithEmailAndPassword(
+          email: adminEmail,
+          password: adminPassword,
+        );
+      } catch (_) {}
+      rethrow;
+    }
+  }
+
   static Future<void> updateUser(String uid, Map<String, dynamic> data) async {
     await _db.collection('users').doc(uid).update(data);
   }

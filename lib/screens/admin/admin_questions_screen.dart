@@ -142,15 +142,17 @@ class _AdminQuestionsScreenState extends State<AdminQuestionsScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _filterSubject.isEmpty ? null : _filterSubject,
+                      isExpanded: true, // ← tambah ini
                       decoration: const InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           hintText: 'Semua Mapel'),
                       items: const [
                         DropdownMenuItem(
                             value: 'matematika', child: Text('Matematika')),
                         DropdownMenuItem(
-                            value: 'bahasa', child: Text('B. Indonesia')),
+                            value: 'bahasa',
+                            child: Text('B. Indo')), // ← dipersingkat
                         DropdownMenuItem(value: 'ipa', child: Text('IPA')),
                         DropdownMenuItem(value: 'ips', child: Text('IPS')),
                       ],
@@ -164,9 +166,10 @@ class _AdminQuestionsScreenState extends State<AdminQuestionsScreen> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _filterGrade.isEmpty ? null : _filterGrade,
+                      isExpanded: true, // ← tambah ini
                       decoration: const InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           hintText: 'Semua Level'),
                       items: [
                         '1',
@@ -191,7 +194,6 @@ class _AdminQuestionsScreenState extends State<AdminQuestionsScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 8),
                   if (_filterSubject.isNotEmpty || _filterGrade.isNotEmpty)
                     TextButton(
                       onPressed: () {
@@ -201,6 +203,10 @@ class _AdminQuestionsScreenState extends State<AdminQuestionsScreen> {
                         });
                         _applyFilter();
                       },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8), // ← lebih compact
+                      ),
                       child: const Text('Reset'),
                     ),
                 ],
@@ -562,6 +568,7 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _subject,
+                    isExpanded: true,
                     decoration:
                         const InputDecoration(labelText: 'Mata Pelajaran'),
                     items: const [
@@ -579,6 +586,7 @@ class _QuestionFormDialogState extends State<_QuestionFormDialog> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _grade,
+                    isExpanded: true,
                     decoration: const InputDecoration(labelText: 'Level'),
                     items: [
                       '1',

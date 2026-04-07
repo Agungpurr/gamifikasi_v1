@@ -17,6 +17,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   List<UserModel> _filtered = [];
   bool _loading = true;
   final _searchCtrl = TextEditingController();
+  String? _filterKelas;
+  String _searchMode = 'nama'; // 'nama' | 'nisn'
+  bool _sortAZ = false;
 
   @override
   void initState() {
@@ -45,9 +48,24 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   void _search(String query) {
     final q = query.toLowerCase();
     setState(() {
-      _filtered = q.isEmpty
+      var result = q.isEmpty
           ? _users
-          : _users.where((u) => u.username.toLowerCase().contains(q)).toList();
+          : _users.where((u) {
+              if (_searchMode == 'nisn') {
+                return (u.nisn ?? '').toLowerCase().contains(q);
+              }
+              return u.username.toLowerCase().contains(q);
+            }).toList();
+
+      if (_filterKelas != null) {
+        result = result.where((u) => u.kelas == _filterKelas).toList();
+      }
+
+      if (_sortAZ) {
+        result.sort((a, b) => a.username.compareTo(b.username));
+      }
+
+      _filtered = result;
     });
   }
 
@@ -55,7 +73,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final usernameCtrl = TextEditingController(text: user.username);
     final nisnCtrl = TextEditingController(text: user.nisn ?? '');
 
-    // Generate list kelas: 1A, 1B, 1C, 2A, ... 6C
     final kelasList = [
       for (int i = 1; i <= 6; i++)
         for (final sub in ['A', 'B', 'C']) '$i$sub'
@@ -75,7 +92,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Username
                 TextFormField(
                   controller: usernameCtrl,
                   decoration: const InputDecoration(
@@ -84,8 +100,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // NISN
                 TextFormField(
                   controller: nisnCtrl,
                   keyboardType: TextInputType.number,
@@ -97,8 +111,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // Kelas dropdown
                 DropdownButtonFormField<String>(
                   value: selectedKelas,
                   decoration: const InputDecoration(
@@ -131,6 +143,205 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 _showSnack('User berhasil diperbarui');
               },
               child: const Text('Simpan'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openCreateDialog() {
+    final emailCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
+    final usernameCtrl = TextEditingController();
+    final nisnCtrl = TextEditingController();
+    final adminEmailCtrl = TextEditingController();
+    final adminPasswordCtrl = TextEditingController();
+    bool isLoading = false;
+
+    final kelasList = [
+      for (int i = 1; i <= 6; i++)
+        for (final sub in ['A', 'B', 'C']) '$i$sub'
+    ];
+    String? selectedKelas;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          title: const Text('Tambah User Baru'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Data siswa
+                const Text('Data Siswa',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: usernameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Siswa',
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: nisnCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  decoration: const InputDecoration(
+                    labelText: 'NISN',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    counterText: '',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  value: selectedKelas,
+                  decoration: const InputDecoration(
+                    labelText: 'Kelas',
+                    prefixIcon: Icon(Icons.class_outlined),
+                  ),
+                  items: kelasList
+                      .map((k) =>
+                          DropdownMenuItem(value: k, child: Text('Kelas $k')))
+                      .toList(),
+                  onChanged: (val) => setStateDialog(() => selectedKelas = val),
+                ),
+                const SizedBox(height: 16),
+
+                // Akun login siswa
+                const Text('Akun Login Siswa',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: passwordCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password (min. 6 karakter)',
+                    prefixIcon: Icon(Icons.lock_outlined),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Konfirmasi identitas admin
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(children: [
+                        Icon(Icons.info_outline,
+                            size: 14, color: Colors.orange),
+                        SizedBox(width: 6),
+                        Text('Konfirmasi akun admin',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange)),
+                      ]),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Diperlukan agar admin tidak ter-logout',
+                        style: TextStyle(fontSize: 11, color: Colors.orange),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: adminEmailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Email Admin',
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: adminPasswordCtrl,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Password Admin',
+                          isDense: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.pop(ctx),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (usernameCtrl.text.trim().isEmpty ||
+                          emailCtrl.text.trim().isEmpty ||
+                          passwordCtrl.text.isEmpty ||
+                          adminEmailCtrl.text.trim().isEmpty ||
+                          adminPasswordCtrl.text.isEmpty ||
+                          selectedKelas == null) {
+                        _showSnack('Semua field wajib diisi');
+                        return;
+                      }
+                      if (passwordCtrl.text.length < 6) {
+                        _showSnack('Password minimal 6 karakter');
+                        return;
+                      }
+
+                      setStateDialog(() => isLoading = true);
+                      try {
+                        await AdminService.createUser(
+                          adminEmail: adminEmailCtrl.text.trim(),
+                          adminPassword: adminPasswordCtrl.text,
+                          newEmail: emailCtrl.text.trim(),
+                          newPassword: passwordCtrl.text,
+                          username: usernameCtrl.text.trim(),
+                          nisn: nisnCtrl.text.trim(),
+                          kelas: selectedKelas!,
+                        );
+                        if (mounted) Navigator.pop(ctx);
+                        _load();
+                        _showSnack('User berhasil dibuat');
+                      } catch (e) {
+                        setStateDialog(() => isLoading = false);
+                        _showSnack('Gagal: ${e.toString()}');
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Buat Akun'),
             ),
           ],
         ),
@@ -206,7 +417,8 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             controller: _searchCtrl,
             onChanged: _search,
             decoration: InputDecoration(
-              hintText: 'Cari nama user...',
+              hintText:
+                  _searchMode == 'nisn' ? 'Cari NISN...' : 'Cari nama user...',
               prefixIcon: const Icon(Icons.search, size: 20),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
@@ -220,8 +432,64 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             ),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              // Dropdown mode pencarian
+              DropdownButton<String>(
+                value: _searchMode,
+                underline: const SizedBox(),
+                isDense: true,
+                items: const [
+                  DropdownMenuItem(value: 'nama', child: Text('Nama')),
+                  DropdownMenuItem(value: 'nisn', child: Text('NISN')),
+                ],
+                onChanged: (val) {
+                  setState(() {
+                    _searchMode = val!;
+                    _searchCtrl.clear();
+                  });
+                  _search('');
+                },
+              ),
+              const SizedBox(width: 12),
 
-        // Counter
+              // Dropdown filter kelas
+              DropdownButton<String?>(
+                value: _filterKelas,
+                hint: const Text('Semua Kelas'),
+                underline: const SizedBox(),
+                isDense: true,
+                items: [
+                  const DropdownMenuItem(
+                      value: null, child: Text('Semua Kelas')),
+                  ...[
+                    for (int i = 1; i <= 6; i++)
+                      for (final sub in ['A', 'B', 'C']) '$i$sub'
+                  ].map((k) =>
+                      DropdownMenuItem(value: k, child: Text('Kelas $k'))),
+                ],
+                onChanged: (val) {
+                  setState(() => _filterKelas = val);
+                  _search(_searchCtrl.text);
+                },
+              ),
+              const SizedBox(width: 12),
+
+              // Toggle sort A-Z
+              FilterChip(
+                label: const Text('A-Z'),
+                selected: _sortAZ,
+                onSelected: (val) {
+                  setState(() => _sortAZ = val);
+                  _search(_searchCtrl.text);
+                },
+              ),
+            ],
+          ),
+        ),
+        // Counter + tombol tambah user
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Row(
@@ -231,10 +499,25 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 '${_filtered.length} user',
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
-              TextButton.icon(
-                onPressed: _load,
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Refresh'),
+              Row(
+                children: [
+                  TextButton.icon(
+                    onPressed: _load,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Refresh'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _openCreateDialog,
+                    icon: const Icon(Icons.person_add, size: 16),
+                    label: const Text('Tambah User'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -387,9 +670,12 @@ class _UserCard extends StatelessWidget {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  if (user.kelas != null)
+                  if (user.kelas != null && user.kelas!.isNotEmpty)
                     _InfoItem(Icons.class_outlined, 'Kelas ${user.kelas}'),
-                  if (user.kelas != null && user.nisn != null)
+                  if (user.kelas != null &&
+                      user.kelas!.isNotEmpty &&
+                      user.nisn != null &&
+                      user.nisn!.isNotEmpty)
                     const SizedBox(width: 16),
                   if (user.nisn != null && user.nisn!.isNotEmpty)
                     _InfoItem(Icons.badge_outlined, 'NISN: ${user.nisn}'),
