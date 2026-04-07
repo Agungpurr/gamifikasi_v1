@@ -42,16 +42,33 @@ class NotificationService {
         ?.requestNotificationsPermission();
   }
 
-  static NotificationDetails get _details => const NotificationDetails(
+  // Ganti method _details yang lama dengan ini
+  static NotificationDetails _buildDetails({
+    required String body,
+    String? bigPicturePath,
+  }) =>
+      NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId,
           _channelName,
           importance: Importance.high,
           priority: Priority.high,
-          styleInformation: BigTextStyleInformation(''),
+          // ← ini yang bikin bisa di-expand seperti WA
+          styleInformation: BigTextStyleInformation(
+            body,
+            htmlFormatBigText: false,
+            contentTitle: null,
+            summaryText: _namaApp,
+          ),
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
       );
+
+  static const _namaApp = 'Gamifikasi Edukatif';
 
   // ═══════════════════════════════════════════
   // 1. PENGINGAT HARIAN — jam 07:00
@@ -84,6 +101,26 @@ class NotificationService {
         '🏆 Juara Dimulai dari Sini',
         'Para juara di leaderboard juga mulai dari nol. Yuk kejar!'
       ),
+      (
+        '💀 Bahkan Jenius Pernah Gagal',
+        'Bedanya, mereka memilih bangkit. Kamu gimana?'
+      ),
+      (
+        '⚡ Semua Pernah Bodoh',
+        'Yang beda cuma yang terus belajar dan yang menyerah.'
+      ),
+      (
+        '🌍 Dunia Kejam bagi yang Lemah',
+        'Tapi kamu bisa jadi kuat dengan belajar setiap hari!'
+      ),
+      (
+        '🔥 Dunia Terasa Kejam',
+        'Jadikan itu alasan untuk terus belajar dan berkembang.'
+      ),
+      (
+        '💡 Dunia Tidak Selalu Adil',
+        'Ilmu adalah cara terbaik untuk mengubah keadaanmu.'
+      ),
     ];
 
     // Pilih pesan berdasarkan hari dalam seminggu
@@ -95,7 +132,7 @@ class NotificationService {
       title,
       body,
       _nextInstanceOf(7, 0), // 07:00
-      _details,
+      _buildDetails(body: body),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -116,7 +153,10 @@ class NotificationService {
       '⚠️ Streak $currentStreak Hari Mau Hilang!',
       'Kamu belum belajar hari ini. Login sekarang sebelum streak kamu reset! 😱',
       _nextInstanceOf(19, 0), // 19:00 sebagai peringatan malam
-      _details,
+      _buildDetails(
+        body:
+            'Kamu belum belajar hari ini. Login sekarang sebelum streak kamu reset! 😱',
+      ),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -160,7 +200,7 @@ class NotificationService {
       _idMilestone,
       title,
       body,
-      _details,
+      _buildDetails(body: body),
     );
   }
 
