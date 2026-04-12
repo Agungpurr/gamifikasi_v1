@@ -185,11 +185,24 @@ class ExportService {
       'B.Indo',
       'IPA',
       'IPS',
+      'Nilai Rata-rata',
     ];
 
     final rows = users.asMap().entries.map((e) {
       final i = e.key;
       final u = e.value;
+
+      final allPoints = [
+        u.subjectProgress['matematika'] ?? 0,
+        u.subjectProgress['bahasa'] ?? 0,
+        u.subjectProgress['ipa'] ?? 0,
+        u.subjectProgress['ips'] ?? 0,
+      ].where((p) => p > 0).toList();
+
+      final rataRata = allPoints.isEmpty
+          ? 0
+          : (allPoints.reduce((a, b) => a + b) / allPoints.length).round();
+
       return [
         '${i + 1}',
         u.nisn ?? '-',
@@ -202,6 +215,7 @@ class ExportService {
         '${u.subjectProgress['bahasa'] ?? 0}',
         '${u.subjectProgress['ipa'] ?? 0}',
         '${u.subjectProgress['ips'] ?? 0}',
+        '$rataRata',
       ];
     }).toList();
 
@@ -227,6 +241,7 @@ class ExportService {
         8: const pw.FixedColumnWidth(40),
         9: const pw.FixedColumnWidth(28),
         10: const pw.FixedColumnWidth(28),
+        11: const pw.FixedColumnWidth(50),
       },
     );
   }
@@ -331,6 +346,7 @@ class ExportService {
       'IPA',
       'IPS',
       'Badges',
+      'Nilai Rata-rata',
       'Tanggal Daftar',
     ];
 
@@ -388,8 +404,19 @@ class ExportService {
       setCell(8, IntCellValue(u.subjectProgress['bahasa'] ?? 0));
       setCell(9, IntCellValue(u.subjectProgress['ipa'] ?? 0));
       setCell(10, IntCellValue(u.subjectProgress['ips'] ?? 0));
-      setCell(11, TextCellValue(u.badges.join(', ')));
-      setCell(12, TextCellValue(_dateFormat.format(u.createdAt)));
+      final allPoints = [
+        u.subjectProgress['matematika'] ?? 0,
+        u.subjectProgress['bahasa'] ?? 0,
+        u.subjectProgress['ipa'] ?? 0,
+        u.subjectProgress['ips'] ?? 0,
+      ].where((p) => p > 0).toList();
+      final rataRata = allPoints.isEmpty
+          ? 0
+          : (allPoints.reduce((a, b) => a + b) / allPoints.length).round();
+
+      setCell(11, IntCellValue(rataRata));
+      setCell(12, TextCellValue(u.badges.join(', ')));
+      setCell(13, TextCellValue(_dateFormat.format(u.createdAt)));
     }
 
     // ── TTD (3 baris setelah data terakhir) ──

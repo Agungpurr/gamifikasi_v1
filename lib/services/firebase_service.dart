@@ -198,6 +198,7 @@ class FirebaseService {
     required int totalQuestions,
     required int correctAnswers,
     required int timeTaken,
+    double nilai = 0,
   }) async {
     await _db.collection('quiz_results').add({
       'uid': uid,
@@ -207,6 +208,7 @@ class FirebaseService {
       'totalQuestions': totalQuestions,
       'correctAnswers': correctAnswers,
       'timeTaken': timeTaken,
+      'nilai': nilai,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
