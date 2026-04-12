@@ -6,6 +6,7 @@ import '../../models/user_model.dart';
 import '../../utils/app_theme.dart';
 import '../../services/export_service.dart';
 import 'package:intl/intl.dart';
+import '../../services/audio_service.dart';
 
 class AdminStatsScreen extends StatefulWidget {
   const AdminStatsScreen({super.key});
@@ -20,11 +21,14 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
   DateTime _endDate = DateTime.now();
   bool _exportingRealtime = false;
   Map<String, dynamic> _stats = {};
+  String _selectedKelas = 'Semua Kelas';
+  List<String> _kelasList = ['Semua Kelas'];
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadKelas();
   }
 
   Future<void> _load() async {
@@ -39,7 +43,11 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
 
   Future<void> _exportPdf() async {
     try {
-      await ExportService.exportUsersPdf(context);
+      // _exportRealtime
+      await ExportService.exportUsersPdf(
+        context,
+        kelas: _selectedKelas,
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +113,7 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
         context,
         startDate: _startDate,
         endDate: _endDate,
+        kelas: _selectedKelas,
       );
     } catch (e) {
       if (mounted) {
@@ -116,6 +125,13 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
     } finally {
       if (mounted) setState(() => _exportingRealtime = false);
     }
+  }
+
+  Future<void> _loadKelas() async {
+    final list = await AdminService.getAvailableKelas();
+    setState(() {
+      _kelasList = ['Semua Kelas', ...list];
+    });
   }
 
   @override
@@ -143,6 +159,33 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
             Text('Ringkasan data aplikasi',
                 style: TextStyle(color: Colors.grey[600])),
             const SizedBox(height: 16),
+            // Dropdown Kelas
+            Row(
+              children: [
+                const Text('Kelas:',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedKelas,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      isDense: true,
+                    ),
+                    items: _kelasList
+                        .map((k) => DropdownMenuItem(value: k, child: Text(k)))
+                        .toList(),
+                    onChanged: (val) => setState(() => _selectedKelas = val!),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -390,6 +433,57 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                 ),
               ),
             ),
+            // Setelah widget Top 5 User Terbaik, tambahkan:
+
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Pengaturan Suara',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 12),
+                    StatefulBuilder(
+                      builder: (context, setLocalState) => Column(
+                        children: [
+                          SwitchListTile(
+                            title: const Text('🎵 Musik Latar',
+                                style: TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle:
+                                const Text('Musik background saat bermain'),
+                            value: AudioService.isBgmEnabled,
+                            activeColor: AppColors.primary,
+                            onChanged: (_) async {
+                              await AudioService.toggleBgm();
+                              if (AudioService.isBgmEnabled) {
+                                await AudioService.playHomeBgm();
+                              }
+                              setLocalState(() {});
+                            },
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: const Text('🔊 Efek Suara',
+                                style: TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: const Text(
+                                'Suara benar, salah, dan notifikasi'),
+                            value: AudioService.isSfxEnabled,
+                            activeColor: AppColors.primary,
+                            onChanged: (_) async {
+                              await AudioService.toggleSfx();
+                              setLocalState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

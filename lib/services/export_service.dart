@@ -48,8 +48,15 @@ class ExportService {
   // EXPORT PDF
   // ═══════════════════════════════════════════
 
-  static Future<void> exportUsersPdf(BuildContext context) async {
-    final users = await AdminService.getAllUsers();
+  static Future<void> exportUsersPdf(BuildContext context,
+      {String? kelas}) async {
+    final allUsers = await AdminService.getAllUsers();
+
+    // TAMBAHKAN: Filter berdasarkan kelas
+    final users = (kelas == null || kelas == 'Semua Kelas')
+        ? allUsers
+        : allUsers.where((u) => u.kelas == kelas).toList();
+
     final now = DateTime.now();
     final pdf = pw.Document();
 
@@ -85,7 +92,10 @@ class ExportService {
           );
         },
         build: (ctx) => [
-          pw.Text('Data Seluruh Siswa',
+          pw.Text(
+              kelas == null || kelas == 'Semua Kelas'
+                  ? 'Data Seluruh Siswa'
+                  : 'Data Siswa - Kelas $kelas',
               style:
                   pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 8),
@@ -285,11 +295,16 @@ class ExportService {
     BuildContext context, {
     required DateTime startDate,
     required DateTime endDate,
+    String? kelas,
   }) async {
-    final results = await FirebaseService.getQuizResultsByDate(
+    var results = await FirebaseService.getQuizResultsByDate(
       startDate: startDate,
       endDate: endDate,
     );
+    // Filter by kelas kalau bukan Semua Kelas
+    if (kelas != null && kelas != 'Semua Kelas') {
+      results = results.where((r) => r['kelas'] == kelas).toList();
+    }
 
     if (results.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -335,7 +350,10 @@ class ExportService {
           );
         },
         build: (ctx) => [
-          pw.Text('Rekap Hasil Quiz: $dateRange',
+          pw.Text(
+              kelas == null || kelas == 'Semua Kelas'
+                  ? 'Rekap Hasil Quiz: $dateRange'
+                  : 'Rekap Hasil Quiz Kelas $kelas: $dateRange',
               style:
                   pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 8),
