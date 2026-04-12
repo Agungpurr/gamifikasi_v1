@@ -5,6 +5,7 @@ import '../../services/admin_service.dart';
 import '../../models/user_model.dart';
 import '../../utils/app_theme.dart';
 import '../../services/export_service.dart';
+import 'package:intl/intl.dart';
 
 class AdminStatsScreen extends StatefulWidget {
   const AdminStatsScreen({super.key});
@@ -15,6 +16,9 @@ class AdminStatsScreen extends StatefulWidget {
 
 class _AdminStatsScreenState extends State<AdminStatsScreen> {
   bool _loading = true;
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate = DateTime.now();
+  bool _exportingRealtime = false;
   Map<String, dynamic> _stats = {};
 
   @override
@@ -64,6 +68,53 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
               backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _pickStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate,
+      firstDate: DateTime(2024),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _startDate = picked);
+  }
+
+  Future<void> _pickEndDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate,
+      firstDate: _startDate,
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) setState(() => _endDate = picked);
+  }
+
+  Future<void> _exportRealtime() async {
+    if (_startDate.isAfter(_endDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Tanggal mulai tidak boleh setelah tanggal akhir')),
+      );
+      return;
+    }
+    setState(() => _exportingRealtime = true);
+    try {
+      await ExportService.exportRealtimePdf(
+        context,
+        startDate: _startDate,
+        endDate: _endDate,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Gagal export: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exportingRealtime = false);
     }
   }
 
@@ -120,6 +171,135 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Export Realtime ──
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Export Hasil Quiz Realtime',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text('Filter berdasarkan tanggal quiz',
+                        style:
+                            TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: _pickStartDate,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                      size: 16, color: AppColors.primary),
+                                  const SizedBox(width: 8),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Dari',
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey[500])),
+                                      Text(
+                                        DateFormat('dd MMM yyyy', 'id_ID')
+                                            .format(_startDate),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child:
+                              Text('—', style: TextStyle(color: Colors.grey)),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: _pickEndDate,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today,
+                                      size: 16, color: AppColors.primary),
+                                  const SizedBox(width: 8),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Sampai',
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey[500])),
+                                      Text(
+                                        DateFormat('dd MMM yyyy', 'id_ID')
+                                            .format(_endDate),
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _exportingRealtime ? null : _exportRealtime,
+                        icon: _exportingRealtime
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.picture_as_pdf),
+                        label: Text(_exportingRealtime
+                            ? 'Menyiapkan PDF...'
+                            : 'Export PDF Hasil Quiz'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 24),
 
