@@ -198,6 +198,7 @@ class FirebaseService {
     required int totalQuestions,
     required int correctAnswers,
     required int timeTaken,
+    double nilai = 0,
   }) async {
     await _db.collection('quiz_results').add({
       'uid': uid,
@@ -207,6 +208,7 @@ class FirebaseService {
       'totalQuestions': totalQuestions,
       'correctAnswers': correctAnswers,
       'timeTaken': timeTaken,
+      'nilai': nilai,
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
@@ -221,6 +223,43 @@ class FirebaseService {
         .get();
 
     return query.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
+  }
+
+  // ═══════════════════════════════════════════
+  // QUIZ RESULTS BY Date
+  // ═══════════════════════════════════════════
+
+  static Future<List<Map<String, dynamic>>> getQuizResultsByDate({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final start = Timestamp.fromDate(
+      DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0),
+    );
+    final end = Timestamp.fromDate(
+      DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59),
+    );
+
+    final query = await _db
+        .collection('quiz_results')
+        .where('timestamp', isGreaterThanOrEqualTo: start)
+        .where('timestamp', isLessThanOrEqualTo: end)
+        .orderBy('timestamp', descending: false)
+        .get();
+
+    // Join dengan data user untuk dapat nama & kelas
+    final results = <Map<String, dynamic>>[];
+    for (final doc in query.docs) {
+      final data = {...doc.data(), 'id': doc.id};
+      final userDoc = await _db.collection('users').doc(data['uid']).get();
+      if (userDoc.exists) {
+        data['username'] = userDoc.data()?['username'] ?? '-';
+        data['kelas'] = userDoc.data()?['kelas'] ?? '-';
+        data['nisn'] = userDoc.data()?['nisn'] ?? '-';
+      }
+      results.add(data);
+    }
+    return results;
   }
 
   // ═══════════════════════════════════════════

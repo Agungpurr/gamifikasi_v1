@@ -12,6 +12,8 @@ import 'package:share_plus/share_plus.dart';
 import '../models/user_model.dart';
 import '../services/admin_service.dart';
 import 'package:open_file/open_file.dart';
+import 'firebase_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ExportService {
   static final _dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
@@ -46,8 +48,15 @@ class ExportService {
   // EXPORT PDF
   // ═══════════════════════════════════════════
 
-  static Future<void> exportUsersPdf(BuildContext context) async {
-    final users = await AdminService.getAllUsers();
+  static Future<void> exportUsersPdf(BuildContext context,
+      {String? kelas}) async {
+    final allUsers = await AdminService.getAllUsers();
+
+    // TAMBAHKAN: Filter berdasarkan kelas
+    final users = (kelas == null || kelas == 'Semua Kelas')
+        ? allUsers
+        : allUsers.where((u) => u.kelas == kelas).toList();
+
     final now = DateTime.now();
     final pdf = pw.Document();
 
@@ -83,7 +92,10 @@ class ExportService {
           );
         },
         build: (ctx) => [
-          pw.Text('Data Seluruh Siswa',
+          pw.Text(
+              kelas == null || kelas == 'Semua Kelas'
+                  ? 'Data Seluruh Siswa'
+                  : 'Data Siswa - Kelas $kelas',
               style:
                   pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 8),
@@ -185,11 +197,24 @@ class ExportService {
       'B.Indo',
       'IPA',
       'IPS',
+      'Nilai Rata-rata',
     ];
 
     final rows = users.asMap().entries.map((e) {
       final i = e.key;
       final u = e.value;
+
+      final allPoints = [
+        u.subjectProgress['matematika'] ?? 0,
+        u.subjectProgress['bahasa'] ?? 0,
+        u.subjectProgress['ipa'] ?? 0,
+        u.subjectProgress['ips'] ?? 0,
+      ].where((p) => p > 0).toList();
+
+      final rataRata = allPoints.isEmpty
+          ? 0
+          : (allPoints.reduce((a, b) => a + b) / allPoints.length).round();
+
       return [
         '${i + 1}',
         u.nisn ?? '-',
@@ -202,6 +227,7 @@ class ExportService {
         '${u.subjectProgress['bahasa'] ?? 0}',
         '${u.subjectProgress['ipa'] ?? 0}',
         '${u.subjectProgress['ips'] ?? 0}',
+        '$rataRata',
       ];
     }).toList();
 
@@ -227,6 +253,7 @@ class ExportService {
         8: const pw.FixedColumnWidth(40),
         9: const pw.FixedColumnWidth(28),
         10: const pw.FixedColumnWidth(28),
+        11: const pw.FixedColumnWidth(50),
       },
     );
   }
@@ -257,6 +284,167 @@ class ExportService {
           ],
         ),
       ],
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // EXPORT PDF Real Time
+  // ═══════════════════════════════════════════
+
+  static Future<void> exportRealtimePdf(
+    BuildContext context, {
+    required DateTime startDate,
+    required DateTime endDate,
+    String? kelas,
+  }) async {
+    var results = await FirebaseService.getQuizResultsByDate(
+      startDate: startDate,
+      endDate: endDate,
+    );
+    // Filter by kelas kalau bukan Semua Kelas
+    if (kelas != null && kelas != 'Semua Kelas') {
+      results = results.where((r) => r['kelas'] == kelas).toList();
+    }
+
+    if (results.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Tidak ada data pada rentang tanggal ini')),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    final pdf = pw.Document();
+    final dateRange =
+        '${_dateFormat.format(startDate)} - ${_dateFormat.format(endDate)}';
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(28),
+        header: (ctx) => _buildPdfHeader(ctx, now),
+        footer: (ctx) {
+          final isLastPage = ctx.pageNumber == ctx.pagesCount;
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              if (isLastPage) ...[
+                pw.SizedBox(height: 24),
+                _buildTtd(now),
+                pw.SizedBox(height: 8),
+              ],
+              pw.Divider(color: PdfColors.grey300),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('$_namaSekolah - Laporan Realtime',
+                      style: const pw.TextStyle(
+                          fontSize: 8, color: PdfColors.grey)),
+                  pw.Text('Halaman ${ctx.pageNumber} dari ${ctx.pagesCount}',
+                      style: const pw.TextStyle(
+                          fontSize: 8, color: PdfColors.grey)),
+                ],
+              ),
+            ],
+          );
+        },
+        build: (ctx) => [
+          pw.Text(
+              kelas == null || kelas == 'Semua Kelas'
+                  ? 'Rekap Hasil Quiz: $dateRange'
+                  : 'Rekap Hasil Quiz Kelas $kelas: $dateRange',
+              style:
+                  pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 8),
+          _buildRealtimeTable(results),
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+      name: 'Laporan_Realtime_${_fileDate.format(now)}.pdf',
+    );
+  }
+
+  // static pw.Widget _buildRealtimeHeader(
+  //     pw.Context ctx, DateTime now, String dateRange) {
+  //   return pw.Column(
+  //     children: [
+  //       // Pakai kop yang sama
+  //       ..._buildPdfHeader(ctx, now)
+  //           .build(ctx), // tidak bisa langsung, lihat catatan di bawah
+  //     ],
+  //   );
+  // }
+
+  static pw.Widget _buildRealtimeTable(List<Map<String, dynamic>> results) {
+    const headers = [
+      'No',
+      'NISN',
+      'Nama Siswa',
+      'Kelas',
+      'Mata Pelajaran',
+      'Benar',
+      'Total Soal',
+      'Nilai',
+      'Poin',
+      'Waktu (detik)',
+      'Tanggal & Jam',
+    ];
+
+    final rows = results.asMap().entries.map((e) {
+      final i = e.key;
+      final r = e.value;
+      final ts = (r['timestamp'] as Timestamp?)?.toDate();
+      final waktu =
+          ts != null ? DateFormat('dd/MM/yyyy HH:mm', 'id_ID').format(ts) : '-';
+      final nilai = r['nilai'] != null
+          ? (r['nilai'] as num).toStringAsFixed(0)
+          : ((r['correctAnswers'] ?? 0) /
+                  (r['totalQuestions'] == 0 ? 1 : r['totalQuestions']) *
+                  100)
+              .toStringAsFixed(0);
+
+      return [
+        '${i + 1}',
+        r['nisn'] ?? '-',
+        r['username'] ?? '-',
+        r['kelas'] ?? '-',
+        _subjectLabel(r['subject'] ?? ''),
+        '${r['correctAnswers'] ?? 0}',
+        '${r['totalQuestions'] ?? 0}',
+        '$nilai',
+        '${r['score'] ?? 0}',
+        '${r['timeTaken'] ?? 0}',
+        waktu,
+      ];
+    }).toList();
+
+    return pw.TableHelper.fromTextArray(
+      headers: headers,
+      data: rows,
+      headerStyle: pw.TextStyle(
+          fontWeight: pw.FontWeight.bold, fontSize: 7, color: PdfColors.white),
+      headerDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#6C63FF')),
+      cellStyle: const pw.TextStyle(fontSize: 7),
+      rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
+      oddRowDecoration: pw.BoxDecoration(color: PdfColor.fromHex('#F8F7FF')),
+      border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+      columnWidths: {
+        0: const pw.FixedColumnWidth(20),
+        1: const pw.FixedColumnWidth(60),
+        2: const pw.FlexColumnWidth(2),
+        3: const pw.FixedColumnWidth(30),
+        4: const pw.FixedColumnWidth(60),
+        5: const pw.FixedColumnWidth(30),
+        6: const pw.FixedColumnWidth(34),
+        7: const pw.FixedColumnWidth(30),
+        8: const pw.FixedColumnWidth(30),
+        9: const pw.FixedColumnWidth(46),
+        10: const pw.FixedColumnWidth(70),
+      },
     );
   }
 
@@ -331,6 +519,7 @@ class ExportService {
       'IPA',
       'IPS',
       'Badges',
+      'Nilai Rata-rata',
       'Tanggal Daftar',
     ];
 
@@ -388,8 +577,19 @@ class ExportService {
       setCell(8, IntCellValue(u.subjectProgress['bahasa'] ?? 0));
       setCell(9, IntCellValue(u.subjectProgress['ipa'] ?? 0));
       setCell(10, IntCellValue(u.subjectProgress['ips'] ?? 0));
-      setCell(11, TextCellValue(u.badges.join(', ')));
-      setCell(12, TextCellValue(_dateFormat.format(u.createdAt)));
+      final allPoints = [
+        u.subjectProgress['matematika'] ?? 0,
+        u.subjectProgress['bahasa'] ?? 0,
+        u.subjectProgress['ipa'] ?? 0,
+        u.subjectProgress['ips'] ?? 0,
+      ].where((p) => p > 0).toList();
+      final rataRata = allPoints.isEmpty
+          ? 0
+          : (allPoints.reduce((a, b) => a + b) / allPoints.length).round();
+
+      setCell(11, IntCellValue(rataRata));
+      setCell(12, TextCellValue(u.badges.join(', ')));
+      setCell(13, TextCellValue(_dateFormat.format(u.createdAt)));
     }
 
     // ── TTD (3 baris setelah data terakhir) ──
