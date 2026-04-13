@@ -7,6 +7,7 @@ import 'admin_users_screen.dart';
 import 'admin_questions_screen.dart';
 import 'admin_stats_screen.dart';
 import 'admin_login_screen.dart';
+import 'admin_global_events_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -24,12 +25,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         label: 'Dashboard',
         activeIcon: Icons.dashboard),
     _NavItem(
+        icon: Icons.event_outlined, label: 'Events', activeIcon: Icons.event),
+    _NavItem(
         icon: Icons.people_outline, label: 'Users', activeIcon: Icons.people),
     _NavItem(icon: Icons.quiz_outlined, label: 'Soal', activeIcon: Icons.quiz),
   ];
 
   final List<Widget> _screens = [
     const AdminStatsScreen(),
+    const AdminGlobalEventsScreen(),
     const AdminUsersScreen(),
     const AdminQuestionsScreen(),
   ];
