@@ -130,6 +130,20 @@ class AppConstants {
       'color': AppColors.ips,
       'description': 'Sejarah, geografi, dan sosial',
     },
+    {
+      'id': 'bahasa_inggris',
+      'name': 'Bahasa Inggris',
+      'emoji': '🧩',
+      'description': 'Belajar kosakata dan grammar',
+      'color': Color(0xFF4CAF50),
+    },
+    {
+      'id': 'seni_budaya',
+      'name': 'Seni Budaya',
+      'emoji': '🎨',
+      'description': 'Eksplorasi seni dan budaya',
+      'color': Color(0xFFE91E63),
+    },
   ];
 
   static const List<String> grades = ['1', '2', '3', '4', '5', '6'];

@@ -191,6 +191,48 @@ class _QuizScreenState extends State<QuizScreen>
             explanation: 'Kalimantan adalah pulau terbesar di Indonesia.',
             points: 15),
       ],
+      'bahasa_inggris': [
+        QuestionModel(
+            id: '11',
+            subject: 'bahasa_inggris',
+            grade: widget.grade,
+            question:
+                'Hari Kemerdekaan Indonesia diperingati setiap tanggal...',
+            options: ['17 Agustus', '1 Juni', '20 Mei', '28 Oktober'],
+            correctIndex: 0,
+            explanation: 'Indonesia merdeka pada 17 Agustus 1945.',
+            points: 10),
+        QuestionModel(
+            id: '12',
+            subject: 'bahasa_inggris',
+            grade: widget.grade,
+            question: 'Pulau terbesar di Indonesia adalah...',
+            options: ['Jawa', 'Sulawesi', 'Kalimantan', 'Sumatra'],
+            correctIndex: 2,
+            explanation: 'Kalimantan adalah pulau terbesar di Indonesia.',
+            points: 15),
+      ],
+      'seni_Budaya': [
+        QuestionModel(
+            id: '13',
+            subject: 'seni_Budaya',
+            grade: widget.grade,
+            question:
+                'Hari Kemerdekaan Indonesia diperingati setiap tanggal...',
+            options: ['17 Agustus', '1 Juni', '20 Mei', '28 Oktober'],
+            correctIndex: 0,
+            explanation: 'Indonesia merdeka pada 17 Agustus 1945.',
+            points: 10),
+        QuestionModel(
+            id: '14',
+            subject: 'seni_Budaya',
+            grade: widget.grade,
+            question: 'Pulau terbesar di Indonesia adalah...',
+            options: ['Jawa', 'Sulawesi', 'Kalimantan', 'Sumatra'],
+            correctIndex: 2,
+            explanation: 'Kalimantan adalah pulau terbesar di Indonesia.',
+            points: 15),
+      ],
     };
     return (fallback[widget.subject] ?? fallback['matematika'])!;
   }

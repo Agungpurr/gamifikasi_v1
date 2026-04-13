@@ -44,7 +44,7 @@ class BadgeModel {
         return ((user.subjectProgress['bahasa'] ?? 0) / 1000).clamp(0.0, 1.0);
       case 'ipa_10':
         return ((user.subjectProgress['ipa'] ?? 0) / 100).clamp(0.0, 1.0);
-      case 'ipa_10':
+      case 'ipa_100':
         return ((user.subjectProgress['ipa'] ?? 0) / 1000).clamp(0.0, 1.0);
       case 'ips_10':
         return ((user.subjectProgress['ips'] ?? 0) / 100).clamp(0.0, 1.0);

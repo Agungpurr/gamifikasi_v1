@@ -464,5 +464,61 @@ class FirebaseService {
       'points': 10,
       'difficulty': 'easy',
     },
+    // Bahasa Inggris - Kelas 3
+    {
+      'subject': 'bahasa_inggris',
+      'grade': '3',
+      'question': 'Ibu kota Indonesia adalah...',
+      'options': ['Bandung', 'Surabaya', 'Jakarta', 'Medan'],
+      'correctIndex': 2,
+      'explanation':
+          'Jakarta adalah ibu kota Indonesia (saat ini masih Jakarta).',
+      'points': 10,
+      'difficulty': 'easy',
+    },
+    {
+      'subject': 'bahasa_inggris',
+      'grade': '3',
+      'question': 'Semboyan negara Indonesia adalah...',
+      'options': [
+        'Bhineka Tunggal Ika',
+        'Pancasila',
+        'Garuda Pancasila',
+        'Merah Putih'
+      ],
+      'correctIndex': 0,
+      'explanation':
+          'Bhinneka Tunggal Ika artinya "Berbeda-beda tetapi tetap satu jua".',
+      'points': 10,
+      'difficulty': 'easy',
+    },
+    // Bahasa Inggris - Kelas 3
+    {
+      'subject': 'seni_budaya',
+      'grade': '3',
+      'question': 'Ibu kota Indonesia adalah...',
+      'options': ['Bandung', 'Surabaya', 'Jakarta', 'Medan'],
+      'correctIndex': 2,
+      'explanation':
+          'Jakarta adalah ibu kota Indonesia (saat ini masih Jakarta).',
+      'points': 10,
+      'difficulty': 'easy',
+    },
+    {
+      'subject': 'seni_budaya',
+      'grade': '3',
+      'question': 'Semboyan negara Indonesia adalah...',
+      'options': [
+        'Bhineka Tunggal Ika',
+        'Pancasila',
+        'Garuda Pancasila',
+        'Merah Putih'
+      ],
+      'correctIndex': 0,
+      'explanation':
+          'Bhinneka Tunggal Ika artinya "Berbeda-beda tetapi tetap satu jua".',
+      'points': 10,
+      'difficulty': 'easy',
+    },
   ];
 }
