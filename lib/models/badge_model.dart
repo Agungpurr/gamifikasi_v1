@@ -28,6 +28,10 @@ class BadgeModel {
         return (user.streakDays / 3).clamp(0.0, 1.0);
       case 'streak_7':
         return (user.streakDays / 7).clamp(0.0, 1.0);
+      case 'streak_30':
+        return (user.streakDays / 30).clamp(0.0, 1.0);
+      case 'streak_100':
+        return (user.streakDays / 100).clamp(0.0, 1.0);
       case 'math_10':
         return ((user.subjectProgress['matematika'] ?? 0) / 100)
             .clamp(0.0, 1.0);
@@ -49,6 +53,10 @@ class BadgeModel {
         return '${user.streakDays.clamp(0, 3)} / 3 hari';
       case 'streak_7':
         return '${user.streakDays.clamp(0, 7)} / 7 hari';
+      case 'streak_30':
+        return '${user.streakDays.clamp(0, 30)} / 30 hari';
+      case 'streak_100':
+        return '${user.streakDays.clamp(0, 100)} / 100 hari';
       case 'math_10':
         final pts = user.subjectProgress['matematika'] ?? 0;
         return '${pts.clamp(0, 100)} / 100 pts';
@@ -94,6 +102,20 @@ class Badges {
         emoji: '⚡',
         requirement: 'streak_7',
         requiredCount: 7),
+    BadgeModel(
+        id: 'streak_30',
+        name: 'Semangat Sebulan',
+        description: 'Belajar 30 hari berturut-turut',
+        emoji: '🧑‍🏫',
+        requirement: 'streak_30',
+        requiredCount: 30),
+    BadgeModel(
+        id: 'streak_100',
+        name: '100 Day Spirit',
+        description: 'Belajar 100 hari berturut-turut',
+        emoji: '📖',
+        requirement: 'streak_100',
+        requiredCount: 100),
     BadgeModel(
         id: 'math_master',
         name: 'Jago Matematika',
