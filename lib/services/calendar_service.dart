@@ -61,24 +61,24 @@ class CalendarService {
     });
   }
 
-  // ─────────────────────────────────────────────
-  // CRUD — USER EVENTS
-  // ─────────────────────────────────────────────
+  // // ─────────────────────────────────────────────
+  // // CRUD — USER EVENTS
+  // // ─────────────────────────────────────────────
 
-  /// Tambah event/note baru milik user
-  Future<void> addEvent(CalendarEvent event) async {
-    await _userEvents.doc(event.id).set(_toFirestore(event));
-  }
+  // /// Tambah event/note baru milik user
+  // Future<void> addEvent(CalendarEvent event) async {
+  //   await _userEvents.doc(event.id).set(_toFirestore(event));
+  // }
 
-  /// Update event/note yang sudah ada
-  Future<void> updateEvent(CalendarEvent event) async {
-    await _userEvents.doc(event.id).update(_toFirestore(event));
-  }
+  // /// Update event/note yang sudah ada
+  // Future<void> updateEvent(CalendarEvent event) async {
+  //   await _userEvents.doc(event.id).update(_toFirestore(event));
+  // }
 
-  /// Hapus event/note milik user (tidak bisa hapus event global)
-  Future<void> deleteEvent(String eventId) async {
-    await _userEvents.doc(eventId).delete();
-  }
+  // /// Hapus event/note milik user (tidak bisa hapus event global)
+  // Future<void> deleteEvent(String eventId) async {
+  //   await _userEvents.doc(eventId).delete();
+  // }
 
   // ─────────────────────────────────────────────
   // ADMIN — GLOBAL EVENTS

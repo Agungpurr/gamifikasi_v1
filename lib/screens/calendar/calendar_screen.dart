@@ -1,15 +1,14 @@
 // lib/screens/calendar/calendar_screen.dart
-// VERSI FIRESTORE — disesuaikan dengan struktur data kamu:
-//   users/{uid}  → streakDays, subjectProgress, dll (UserModel)
-//   users/{uid}/calendar_events/{id}  → event & note user
-//   global_events/{id}  → event admin
+// VERSI FIRESTORE — HANYA MENAMPILKAN EVENT DARI ADMIN GLOBAL
+//   global_events/{id}  → event admin (bisa event atau note)
+//   STREAK DAYS tetap ada dari UserModel
 
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/auth_provider.dart';
-import '../../../services/calendar_service.dart';
 import '../../../utils/app_theme.dart';
 
 enum CalendarEventType { event, note }
@@ -34,7 +33,7 @@ class CalendarEvent {
     required this.color,
     this.isAllDay = true,
     this.time,
-    this.isGlobal = false,
+    this.isGlobal = true, // Selalu true karena hanya dari admin
   });
 }
 
@@ -51,6 +50,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   DateTime _selectedDay = DateTime.now();
   late AnimationController _panelCtrl;
   late Animation<double> _panelAnim;
+
+  final _db = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -72,7 +73,6 @@ class _CalendarScreenState extends State<CalendarScreen>
       all.where((e) => isSameDay(e.date, day)).toList();
 
   /// Streak dihitung mundur dari hari ini
-  /// Konsisten dengan logika updateStreak() di firebase_service.dart
   bool _hasStreak(DateTime day, int streakDays) {
     final today =
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
@@ -81,35 +81,40 @@ class _CalendarScreenState extends State<CalendarScreen>
     return diff >= 0 && diff < streakDays;
   }
 
-  Future<void> _save(CalendarEvent ev, {CalendarEvent? existing}) async {
-    try {
-      if (existing != null) {
-        await CalendarService.instance.updateEvent(ev);
-      } else {
-        await CalendarService.instance.addEvent(ev);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gagal menyimpan: $e'),
-          backgroundColor: Colors.red.shade400,
-        ));
-      }
-    }
-  }
-
-  Future<void> _delete(CalendarEvent ev) async {
-    if (ev.isGlobal) return;
-    try {
-      await CalendarService.instance.deleteEvent(ev.id);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Gagal menghapus: $e'),
-          backgroundColor: Colors.red.shade400,
-        ));
-      }
-    }
+  Stream<List<CalendarEvent>> _streamGlobalEvents() {
+    return _db
+        .collection('global_events')
+        .orderBy('date')
+        .snapshots()
+        .map((snap) => snap.docs.map((d) {
+              final data = d.data();
+              final ts = data['date'];
+              DateTime date;
+              if (ts is Timestamp) {
+                date = ts.toDate();
+              } else if (ts is String) {
+                date = DateTime.tryParse(ts) ?? DateTime.now();
+              } else {
+                date = DateTime.now();
+              }
+              final hour = data['hour'] as int?;
+              final minute = data['minute'] as int?;
+              return CalendarEvent(
+                id: d.id,
+                title: data['title'] ?? '',
+                description: data['description'] as String?,
+                date: date,
+                type: data['type'] == 'note'
+                    ? CalendarEventType.note
+                    : CalendarEventType.event,
+                color: Color(data['color'] as int? ?? 0xFF7C6FF7),
+                isAllDay: data['isAllDay'] as bool? ?? true,
+                time: (hour != null && minute != null)
+                    ? TimeOfDay(hour: hour, minute: minute)
+                    : null,
+                isGlobal: true,
+              );
+            }).toList());
   }
 
   @override
@@ -117,80 +122,66 @@ class _CalendarScreenState extends State<CalendarScreen>
     final user = context.watch<AuthProvider>().userModel;
     final streakDays = user?.streakDays ?? 0;
 
-    return StreamBuilder<List<CalendarEvent>>(
-      stream: CalendarService.instance.eventsStream(),
-      builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Color(0xFFF8F7FF),
-            body: Center(
-              child: CircularProgressIndicator(color: Color(0xFF7C6FF7)),
-            ),
-          );
-        }
-        if (snap.hasError) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF8F7FF),
-            body: Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('😕', style: TextStyle(fontSize: 48)),
-                const SizedBox(height: 12),
-                Text('Gagal memuat kalender',
-                    style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w600)),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7C6FF7),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))),
-                  onPressed: () => setState(() {}),
-                  child: const Text('Coba Lagi',
-                      style: TextStyle(color: Colors.white)),
-                ),
-              ]),
-            ),
-          );
-        }
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F7FF),
+      body: Column(children: [
+        _header(streakDays),
+        Expanded(
+          child: StreamBuilder<List<CalendarEvent>>(
+            stream: _streamGlobalEvents(),
+            builder: (ctx, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF7C6FF7)),
+                );
+              }
+              if (snap.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('😕', style: TextStyle(fontSize: 48)),
+                      const SizedBox(height: 12),
+                      Text('Gagal memuat kalender',
+                          style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF7C6FF7),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12))),
+                        onPressed: () => setState(() {}),
+                        child: const Text('Coba Lagi',
+                            style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-        final all = snap.data ?? [];
-        final evCount =
-            all.where((e) => e.type == CalendarEventType.event).length;
-        final noteCount =
-            all.where((e) => e.type == CalendarEventType.note).length;
+              final all = snap.data ?? [];
+              final evCount =
+                  all.where((e) => e.type == CalendarEventType.event).length;
+              final noteCount =
+                  all.where((e) => e.type == CalendarEventType.note).length;
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF8F7FF),
-          body: Column(children: [
-            _header(streakDays, evCount, noteCount),
-            Expanded(
-              child: SingleChildScrollView(
+              return SingleChildScrollView(
                 child: Column(children: [
                   _calendar(streakDays, all),
                   _dayPanel(streakDays, all),
                   const SizedBox(height: 100),
                 ]),
-              ),
-            ),
-          ]),
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: const Color(0xFF7C6FF7),
-            elevation: 4,
-            icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: const Text('Tambah',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14)),
-            onPressed: () => _showSheet(),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ]),
     );
   }
 
-  Widget _header(int streak, int ev, int note) => Container(
+  Widget _header(int streak) => Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -221,11 +212,23 @@ class _CalendarScreenState extends State<CalendarScreen>
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.only(left: 12),
-                child: Wrap(spacing: 8, runSpacing: 6, children: [
-                  _chip('🔥', '$streak hari streak'),
-                  _chip('📅', '$ev event'),
-                  _chip('🔵', '$note catatan'),
-                ]),
+                child: StreamBuilder<List<CalendarEvent>>(
+                  stream: _streamGlobalEvents(),
+                  builder: (ctx, snap) {
+                    final all = snap.data ?? [];
+                    final evCount = all
+                        .where((e) => e.type == CalendarEventType.event)
+                        .length;
+                    final noteCount = all
+                        .where((e) => e.type == CalendarEventType.note)
+                        .length;
+                    return Wrap(spacing: 8, runSpacing: 6, children: [
+                      _chip('🔥', '$streak hari streak'),
+                      _chip('📅', '$evCount event'),
+                      _chip('🔵', '$noteCount catatan'),
+                    ]);
+                  },
+                ),
               ),
             ]),
           ),
@@ -474,10 +477,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                             color: Colors.grey.shade400,
                             fontSize: 13,
                             fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 4),
-                    Text('Tap + untuk menambahkan',
-                        style: TextStyle(
-                            color: Colors.grey.shade300, fontSize: 12)),
                   ]),
                 ),
               )
@@ -488,11 +487,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                 padding: const EdgeInsets.all(12),
                 itemCount: day.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (_, i) => _EventTile(
-                  event: day[i],
-                  onDelete: () => _delete(day[i]),
-                  onEdit: () => _showSheet(existing: day[i]),
-                ),
+                itemBuilder: (_, i) => _EventTile(event: day[i]),
               ),
             const SizedBox(height: 8),
           ]),
@@ -500,356 +495,290 @@ class _CalendarScreenState extends State<CalendarScreen>
       ),
     );
   }
-
-  void _showSheet({CalendarEvent? existing}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _AddSheet(
-        selectedDate: _selectedDay,
-        existing: existing,
-        onSave: (ev) async {
-          await _save(ev, existing: existing);
-          if (mounted) Navigator.pop(context);
-        },
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────
-// EVENT TILE
+// EVENT TILE (HANYA TAMPIL, TIDAK BISA EDIT/HAPUS)
 // ─────────────────────────────────────────────
 
 class _EventTile extends StatelessWidget {
   final CalendarEvent event;
-  final VoidCallback onDelete;
-  final VoidCallback onEdit;
-  const _EventTile(
-      {required this.event, required this.onDelete, required this.onEdit});
+  const _EventTile({required this.event});
 
   @override
   Widget build(BuildContext context) {
     final isNote = event.type == CalendarEventType.note;
-    return Dismissible(
-      key: Key(event.id),
-      direction:
-          event.isGlobal ? DismissDirection.none : DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 16),
+    return GestureDetector(
+      onTap: () => _showEventDetail(context, event),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
+          color: event.color.withOpacity(0.07),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade200),
+          border: Border.all(color: event.color.withOpacity(0.2)),
         ),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-      ),
-      onDismissed: (_) => onDelete(),
-      child: GestureDetector(
-        onTap: event.isGlobal ? null : onEdit,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: event.color.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: event.color.withOpacity(0.2)),
+        child: Row(children: [
+          Container(
+              width: 4,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: event.color, borderRadius: BorderRadius.circular(4))),
+          const SizedBox(width: 12),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: event.color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+                child: Text(isNote ? '🔵' : '📅',
+                    style: const TextStyle(fontSize: 18))),
           ),
-          child: Row(children: [
+          const SizedBox(width: 12),
+          Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(
+                    child: Text(event.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: Color(0xFF2D2D2D)))),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7C6FF7).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text('Admin',
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF7C6FF7),
+                          fontWeight: FontWeight.w700)),
+                ),
+              ]),
+              if (event.description != null) ...[
+                const SizedBox(height: 3),
+                Text(event.description!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              ],
+            ]),
+          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Container(
-                width: 4,
-                height: 44,
-                decoration: BoxDecoration(
-                    color: event.color,
-                    borderRadius: BorderRadius.circular(4))),
-            const SizedBox(width: 12),
-            Container(
-              width: 40,
-              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: event.color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Center(
-                  child: Text(isNote ? '🔵' : '📅',
-                      style: const TextStyle(fontSize: 18))),
+              child: Text(
+                event.isAllDay ? 'Seharian' : event.time?.format(context) ?? '',
+                style: TextStyle(
+                    fontSize: 11,
+                    color: event.color,
+                    fontWeight: FontWeight.w700),
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                          child: Text(event.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                  color: Color(0xFF2D2D2D)))),
-                      if (event.isGlobal) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF7C6FF7).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
+            const SizedBox(height: 4),
+            Text(isNote ? 'Catatan' : 'Event',
+                style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  void _showEventDetail(BuildContext context, CalendarEvent event) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: event.color,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF2D2D2D),
                           ),
-                          child: const Text('Admin',
-                              style: TextStyle(
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: event.color.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                event.type == CalendarEventType.event
+                                    ? 'Event'
+                                    : 'Catatan',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: event.color,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF7C6FF7).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'Admin Global',
+                                style: TextStyle(
                                   fontSize: 10,
                                   color: Color(0xFF7C6FF7),
-                                  fontWeight: FontWeight.w700)),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ]),
-                    if (event.description != null) ...[
-                      const SizedBox(height: 3),
-                      Text(event.description!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade500)),
-                    ],
-                  ]),
-            ),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: event.color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Divider(color: Colors.grey.shade200),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today_rounded,
+                      size: 18, color: Colors.grey.shade600),
+                  const SizedBox(width: 12),
+                  Text(
+                    DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(event.date),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              if (!event.isAllDay && event.time != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.access_time_rounded,
+                        size: 18, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Text(
+                      event.time!.format(context),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text(
-                  event.isAllDay
-                      ? 'Seharian'
-                      : event.time?.format(context) ?? '',
+              ],
+              if (event.isAllDay) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.all_inclusive_rounded,
+                        size: 18, color: Colors.grey.shade600),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Seharian',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              if (event.description != null &&
+                  event.description!.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const Text(
+                  'Deskripsi',
                   style: TextStyle(
-                      fontSize: 11,
-                      color: event.color,
-                      fontWeight: FontWeight.w700),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2D2D2D),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    event.description!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Tutup'),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(isNote ? 'Catatan' : 'Event',
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade400)),
-            ]),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// ADD / EDIT SHEET
-// ─────────────────────────────────────────────
-
-class _AddSheet extends StatefulWidget {
-  final DateTime selectedDate;
-  final CalendarEvent? existing;
-  final Future<void> Function(CalendarEvent) onSave;
-  const _AddSheet(
-      {required this.selectedDate, required this.onSave, this.existing});
-  @override
-  State<_AddSheet> createState() => _AddSheetState();
-}
-
-class _AddSheetState extends State<_AddSheet> {
-  late CalendarEventType _type;
-  late TextEditingController _titleCtrl;
-  late TextEditingController _descCtrl;
-  late bool _isAllDay;
-  late TimeOfDay _time;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final e = widget.existing;
-    _type = e?.type ?? CalendarEventType.event;
-    _titleCtrl = TextEditingController(text: e?.title ?? '');
-    _descCtrl = TextEditingController(text: e?.description ?? '');
-    _isAllDay = e?.isAllDay ?? true;
-    _time = e?.time ?? TimeOfDay.now();
-  }
-
-  @override
-  void dispose() {
-    _titleCtrl.dispose();
-    _descCtrl.dispose();
-    super.dispose();
-  }
-
-  Color get _col => _type == CalendarEventType.event
-      ? const Color(0xFF7C6FF7)
-      : const Color(0xFF3BCEAC);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 28,
-      ),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Center(
-            child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2)))),
-        const SizedBox(height: 16),
-        Text(widget.existing != null ? 'Edit' : 'Tambah ke Kalender',
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF2D2D2D))),
-        const SizedBox(height: 4),
-        Text(
-          DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(widget.selectedDate),
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-        ),
-        const SizedBox(height: 16),
-        Row(children: [
-          _tBtn(CalendarEventType.event, '📅 Event', const Color(0xFF7C6FF7)),
-          const SizedBox(width: 8),
-          _tBtn(CalendarEventType.note, '🔵 Catatan', const Color(0xFF3BCEAC)),
-        ]),
-        const SizedBox(height: 14),
-        _field(
-            _titleCtrl,
-            _type == CalendarEventType.event
-                ? 'Nama event...'
-                : 'Judul catatan...'),
-        const SizedBox(height: 10),
-        _field(_descCtrl, 'Deskripsi (opsional)...', maxLines: 2),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-              color: const Color(0xFFF5F4FF),
-              borderRadius: BorderRadius.circular(14)),
-          child: Row(children: [
-            Switch(
-                value: _isAllDay,
-                activeColor: _col,
-                onChanged: (v) => setState(() => _isAllDay = v)),
-            Text('Seharian',
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700)),
-            const Spacer(),
-            if (!_isAllDay)
-              TextButton.icon(
-                onPressed: () async {
-                  final t = await showTimePicker(
-                      context: context, initialTime: _time);
-                  if (t != null) setState(() => _time = t);
-                },
-                icon: Icon(Icons.access_time_rounded, color: _col),
-                label: Text(_time.format(context),
-                    style: TextStyle(color: _col, fontWeight: FontWeight.w700)),
-              ),
-          ]),
-        ),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _col,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-            ),
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : Text(widget.existing != null ? 'Simpan Perubahan' : 'Simpan',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700)),
+            ],
           ),
         ),
-      ]),
-    );
-  }
-
-  Widget _tBtn(CalendarEventType t, String label, Color c) {
-    final sel = _type == t;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _type = t),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: sel ? c : c.withOpacity(0.09),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: Text(label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: sel ? Colors.white : c)),
-        ),
       ),
     );
-  }
-
-  Widget _field(TextEditingController ctrl, String hint, {int maxLines = 1}) =>
-      TextField(
-        controller: ctrl,
-        maxLines: maxLines,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF2D2D2D)),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-          filled: true,
-          fillColor: const Color(0xFFF5F4FF),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: _col, width: 1.5)),
-        ),
-      );
-
-  Future<void> _save() async {
-    if (_titleCtrl.text.trim().isEmpty) return;
-    setState(() => _saving = true);
-    await widget.onSave(CalendarEvent(
-      id: widget.existing?.id ?? 'ev_${DateTime.now().millisecondsSinceEpoch}',
-      title: _titleCtrl.text.trim(),
-      description: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
-      date: widget.selectedDate,
-      type: _type,
-      color: _col,
-      isAllDay: _isAllDay,
-      time: _isAllDay ? null : _time,
-    ));
-    if (mounted) setState(() => _saving = false);
   }
 }
