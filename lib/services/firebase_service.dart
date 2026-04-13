@@ -468,55 +468,52 @@ class FirebaseService {
     {
       'subject': 'bahasa_inggris',
       'grade': '3',
-      'question': 'Ibu kota Indonesia adalah...',
-      'options': ['Bandung', 'Surabaya', 'Jakarta', 'Medan'],
-      'correctIndex': 2,
-      'explanation':
-          'Jakarta adalah ibu kota Indonesia (saat ini masih Jakarta).',
+      'question': 'What is the meaning of "apple"?',
+      'options': ['Apel', 'Jeruk', 'Mangga', 'Pisang'],
+      'correctIndex': 0,
+      'explanation': '"Apple" artinya adalah apel.',
       'points': 10,
       'difficulty': 'easy',
     },
     {
       'subject': 'bahasa_inggris',
       'grade': '3',
-      'question': 'Semboyan negara Indonesia adalah...',
-      'options': [
-        'Bhineka Tunggal Ika',
-        'Pancasila',
-        'Garuda Pancasila',
-        'Merah Putih'
-      ],
-      'correctIndex': 0,
-      'explanation':
-          'Bhinneka Tunggal Ika artinya "Berbeda-beda tetapi tetap satu jua".',
+      'question': 'How do you say "kucing" in English?',
+      'options': ['Dog', 'Cat', 'Bird', 'Fish'],
+      'correctIndex': 1,
+      'explanation': 'Kucing dalam bahasa Inggris adalah "cat".',
       'points': 10,
       'difficulty': 'easy',
     },
-    // Bahasa Inggris - Kelas 3
+    // Seni Budaya - Kelas 3
     {
       'subject': 'seni_budaya',
       'grade': '3',
-      'question': 'Ibu kota Indonesia adalah...',
-      'options': ['Bandung', 'Surabaya', 'Jakarta', 'Medan'],
+      'question': 'Alat musik yang dipukul disebut...',
+      'options': [
+        'Alat musik tiup',
+        'Alat musik gesek',
+        'Alat musik pukul',
+        'Alat musik petik'
+      ],
       'correctIndex': 2,
       'explanation':
-          'Jakarta adalah ibu kota Indonesia (saat ini masih Jakarta).',
+          'Alat musik pukul dimainkan dengan cara dipukul, seperti drum.',
       'points': 10,
       'difficulty': 'easy',
     },
     {
       'subject': 'seni_budaya',
       'grade': '3',
-      'question': 'Semboyan negara Indonesia adalah...',
+      'question': 'Warna dasar terdiri dari...',
       'options': [
-        'Bhineka Tunggal Ika',
-        'Pancasila',
-        'Garuda Pancasila',
-        'Merah Putih'
+        'Merah, kuning, biru',
+        'Hijau, ungu, oranye',
+        'Hitam, putih, abu-abu',
+        'Merah, hijau, biru'
       ],
       'correctIndex': 0,
-      'explanation':
-          'Bhinneka Tunggal Ika artinya "Berbeda-beda tetapi tetap satu jua".',
+      'explanation': 'Warna dasar adalah merah, kuning, dan biru.',
       'points': 10,
       'difficulty': 'easy',
     },

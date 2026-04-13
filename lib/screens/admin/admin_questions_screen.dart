@@ -155,6 +155,10 @@ class _AdminQuestionsScreenState extends State<AdminQuestionsScreen> {
                             child: Text('B. Indo')), // ← dipersingkat
                         DropdownMenuItem(value: 'ipa', child: Text('IPA')),
                         DropdownMenuItem(value: 'ips', child: Text('IPS')),
+                        DropdownMenuItem(
+                            value: 'bahasa_inggris', child: Text('B. Inggris')),
+                        DropdownMenuItem(
+                            value: 'seni_budaya', child: Text('Seni Budaya')),
                       ],
                       onChanged: (val) {
                         setState(() => _filterSubject = val ?? '');
@@ -284,6 +288,10 @@ class _QuestionCard extends StatelessWidget {
         return AppColors.ipa;
       case 'ips':
         return AppColors.ips;
+      case 'bahasa_inggris':
+        return const Color.fromARGB(255, 220, 22, 25);
+      case 'seni':
+        return const Color.fromARGB(255, 24, 91, 22);
       default:
         return Colors.grey;
     }
@@ -299,6 +307,10 @@ class _QuestionCard extends StatelessWidget {
         return 'IPA';
       case 'ips':
         return 'IPS';
+      case 'inggris':
+        return 'B. Inggris';
+      case 'seni_budaya':
+        return 'Seni Budaya';
       default:
         return question.subject;
     }
