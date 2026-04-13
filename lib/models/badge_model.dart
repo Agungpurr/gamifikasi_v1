@@ -35,10 +35,21 @@ class BadgeModel {
       case 'math_10':
         return ((user.subjectProgress['matematika'] ?? 0) / 100)
             .clamp(0.0, 1.0);
+      case 'math_100':
+        return ((user.subjectProgress['matematika'] ?? 0) / 1000)
+            .clamp(0.0, 1.0);
       case 'bahasa_10':
         return ((user.subjectProgress['bahasa'] ?? 0) / 100).clamp(0.0, 1.0);
+      case 'bahasa_100':
+        return ((user.subjectProgress['bahasa'] ?? 0) / 1000).clamp(0.0, 1.0);
       case 'ipa_10':
         return ((user.subjectProgress['ipa'] ?? 0) / 100).clamp(0.0, 1.0);
+      case 'ipa_10':
+        return ((user.subjectProgress['ipa'] ?? 0) / 1000).clamp(0.0, 1.0);
+      case 'ips_10':
+        return ((user.subjectProgress['ips'] ?? 0) / 100).clamp(0.0, 1.0);
+      case 'ips_100':
+        return ((user.subjectProgress['ips'] ?? 0) / 1000).clamp(0.0, 1.0);
       case 'level_5':
         return (user.level / 5).clamp(0.0, 1.0);
       default:
@@ -60,12 +71,27 @@ class BadgeModel {
       case 'math_10':
         final pts = user.subjectProgress['matematika'] ?? 0;
         return '${pts.clamp(0, 100)} / 100 pts';
+      case 'math_100':
+        final pts = user.subjectProgress['matematika'] ?? 0;
+        return '${pts.clamp(0, 1000)} / 1000 pts';
       case 'bahasa_10':
         final pts = user.subjectProgress['bahasa'] ?? 0;
         return '${pts.clamp(0, 100)} / 100 pts';
+      case 'bahasa_100':
+        final pts = user.subjectProgress['bahasa'] ?? 0;
+        return '${pts.clamp(0, 1000)} / 1000 pts';
       case 'ipa_10':
         final pts = user.subjectProgress['ipa'] ?? 0;
         return '${pts.clamp(0, 100)} / 100 pts';
+      case 'ipa_100':
+        final pts = user.subjectProgress['ipa'] ?? 0;
+        return '${pts.clamp(0, 1000)} / 1000 pts';
+      case 'ips_10':
+        final pts = user.subjectProgress['ips'] ?? 0;
+        return '${pts.clamp(0, 100)} / 100 pts';
+      case 'ips_100':
+        final pts = user.subjectProgress['ips'] ?? 0;
+        return '${pts.clamp(0, 1000)} / 1000 pts';
       case 'level_5':
         return 'Level ${user.level.clamp(1, 5)} / 5';
       default:
@@ -124,6 +150,13 @@ class Badges {
         requirement: 'math_10',
         requiredCount: 100),
     BadgeModel(
+        id: 'math_expert',
+        name: 'Master Matematika',
+        description: 'Kumpulkan 1000 pts matematika',
+        emoji: '🎲',
+        requirement: 'math_100',
+        requiredCount: 1000),
+    BadgeModel(
         id: 'reading_hero',
         name: 'Pahlawan Membaca',
         description: 'Kumpulkan 100 pts Bahasa Indonesia',
@@ -131,12 +164,40 @@ class Badges {
         requirement: 'bahasa_10',
         requiredCount: 100),
     BadgeModel(
+        id: 'expert_reading',
+        name: 'Master Membaca',
+        description: 'Kumpulkan 1000 pts bahasa',
+        emoji: '🦉',
+        requirement: 'bahasa_100',
+        requiredCount: 1000),
+    BadgeModel(
         id: 'science_wizard',
         name: 'Penyihir IPA',
         description: 'Kumpulkan 100 pts IPA',
         emoji: '🔬',
         requirement: 'ipa_10',
         requiredCount: 100),
+    BadgeModel(
+        id: 'sciece_expert',
+        name: 'Penakluk IPA',
+        description: 'Kumpulkan 1000 pts IPA',
+        emoji: '🌏',
+        requirement: 'ipa_100',
+        requiredCount: 1000),
+    BadgeModel(
+        id: 'social_good',
+        name: 'Pahlawan Sosial',
+        description: 'Kumpulkan 100 pts IPS',
+        emoji: '🎭',
+        requirement: 'ips_10',
+        requiredCount: 100),
+    BadgeModel(
+        id: 'social_expert',
+        name: 'Pahlawan Hebat',
+        description: 'Kumpulkan 1000 pts IPS',
+        emoji: '🤹‍♀️',
+        requirement: 'ips_100',
+        requiredCount: 1000),
     BadgeModel(
         id: 'level_5',
         name: 'Naik Level',
