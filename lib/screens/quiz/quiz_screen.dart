@@ -300,6 +300,10 @@ class _QuizScreenState extends State<QuizScreen>
     _timer?.cancel();
     final auth = context.read<AuthProvider>();
 
+    // Hitung nilai 0-100
+    final double nilai =
+        _questions.isEmpty ? 0 : (_correctAnswers / _questions.length * 100);
+
     if (auth.firebaseUser != null) {
       await FirebaseService.saveQuizResult(
         uid: auth.firebaseUser!.uid,
@@ -309,6 +313,7 @@ class _QuizScreenState extends State<QuizScreen>
         totalQuestions: _questions.length,
         correctAnswers: _correctAnswers,
         timeTaken: _totalTime,
+        nilai: (_correctAnswers / _questions.length * 100).roundToDouble(),
       );
       await auth.addPoints(_score, widget.subject);
 
@@ -329,6 +334,7 @@ class _QuizScreenState extends State<QuizScreen>
             correctAnswers: _correctAnswers,
             totalQuestions: _questions.length,
             subject: widget.subject,
+            nilai: (_correctAnswers / _questions.length * 100).roundToDouble(),
           ),
         ),
       );

@@ -206,4 +206,28 @@ class AdminService {
       'topUsers': topUsers.take(5).toList(),
     };
   }
+
+  // ═══════════════════════════════════════════
+  // Filter export kelas
+  // ═══════════════════════════════════════════
+  // Ambil daftar kelas unik dari semua user
+  static Future<List<String>> getAvailableKelas() async {
+    final users = await getAllUsers();
+    final kelasSet = users
+        .map((u) => u.kelas ?? '')
+        .where((k) => k.isNotEmpty)
+        .toSet()
+        .toList();
+    kelasSet.sort();
+    return kelasSet;
+  }
+
+// Get users filter by kelas, null = semua kelas
+  static Future<List<UserModel>> getUsersByKelas(String? kelas) async {
+    if (kelas == null || kelas == 'Semua Kelas') {
+      return getAllUsers();
+    }
+    final all = await getAllUsers();
+    return all.where((u) => u.kelas == kelas).toList();
+  }
 }

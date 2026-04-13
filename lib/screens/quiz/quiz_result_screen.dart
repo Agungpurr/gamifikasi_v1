@@ -10,6 +10,7 @@ class QuizResultScreen extends StatefulWidget {
   final int correctAnswers;
   final int totalQuestions;
   final String subject;
+  final double nilai;
 
   const QuizResultScreen({
     super.key,
@@ -17,6 +18,7 @@ class QuizResultScreen extends StatefulWidget {
     required this.correctAnswers,
     required this.totalQuestions,
     required this.subject,
+    required this.nilai,
   });
 
   @override
@@ -66,6 +68,18 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
     if (_percentage >= 0.7) return '🥈';
     if (_percentage >= 0.6) return '🥉';
     return '💪';
+  }
+
+  double get _nilaiAngka {
+    return (_percentage * 100).clamp(0, 100);
+  }
+
+  String get _predikat {
+    if (_nilaiAngka >= 90) return 'Sangat Baik';
+    if (_nilaiAngka >= 80) return 'Baik';
+    if (_nilaiAngka >= 70) return 'Cukup';
+    if (_nilaiAngka >= 60) return 'Perlu Bimbingan';
+    return 'Kurang';
   }
 
   Color get _resultColor {
@@ -204,7 +218,66 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
                                 .slideY(begin: 0.2)
                                 .fadeIn(),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 14, horizontal: 20),
+                              decoration: BoxDecoration(
+                                color: _resultColor.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: _resultColor.withOpacity(0.4)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    '📋 Nilai Kamu',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12),
+                                  ),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _nilaiAngka.toStringAsFixed(0),
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w600,
+                                          color: _resultColor,
+                                        ),
+                                      ),
+                                      const Text(
+                                        ' / 100',
+                                        style: TextStyle(
+                                            fontSize: 10, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: _resultColor.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      _predikat,
+                                      style: TextStyle(
+                                        color: _resultColor,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                                .animate(delay: 550.ms)
+                                .slideY(begin: 0.2)
+                                .fadeIn(),
 
                             // Progress bar
                             Column(
