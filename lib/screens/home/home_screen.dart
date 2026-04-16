@@ -9,6 +9,7 @@ import '../../../utils/app_theme.dart';
 import 'package:edu_kids_app/screens/quiz/subject_select_screen.dart';
 import 'package:edu_kids_app/screens/leaderboard/leaderboard_screen.dart';
 import 'package:edu_kids_app/screens/profile/profile_screen.dart';
+import 'package:edu_kids_app/screens/calendar/calendar_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -201,6 +202,11 @@ class _HomeTab extends StatelessWidget {
                       label: 'Streak',
                       value: '${user?.streakDays ?? 0} hari',
                       color: Colors.orange,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const CalendarScreen()),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     _StatCard(

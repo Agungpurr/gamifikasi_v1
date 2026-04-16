@@ -1,6 +1,7 @@
 // lib/screens/quiz/quiz_screen.dart
 
 import 'dart:async';
+import 'dart:math';
 import 'package:edu_kids_app/services/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -68,23 +69,72 @@ class _QuizScreenState extends State<QuizScreen>
       if (questions.isEmpty) {
         // Use built-in fallback questions
         setState(() {
-          _questions = _getFallbackQuestions();
+          _questions = _fisherYatesShuffle(_getFallbackQuestions());
           _isLoading = false;
         });
       } else {
         setState(() {
-          _questions = questions;
+          _questions = _fisherYatesShuffle(questions);
           _isLoading = false;
         });
       }
       _startTimer();
     } catch (e) {
       setState(() {
-        _questions = _getFallbackQuestions();
+        _questions = _fisherYatesShuffle(_getFallbackQuestions());
         _isLoading = false;
       });
       _startTimer();
     }
+  }
+
+  /// Algoritma Fisher-Yates Shuffle — mengacak urutan soal
+  /// Kompleksitas waktu: O(n) | Kompleksitas ruang: O(1)
+  List<QuestionModel> _fisherYatesShuffle(List<QuestionModel> questions) {
+    final Random random = Random();
+    final List<QuestionModel> shuffled = List.from(questions);
+    for (int i = shuffled.length - 1; i > 0; i--) {
+      final int j = random.nextInt(i + 1);
+      final temp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = temp;
+    }
+    // Acak juga pilihan jawaban tiap soal
+    return shuffled.map((q) => _shuffleOptions(q)).toList();
+  }
+
+  /// Fisher-Yates Shuffle untuk pilihan jawaban (options)
+  /// correctIndex diperbarui otomatis mengikuti posisi baru jawaban benar
+  QuestionModel _shuffleOptions(QuestionModel question) {
+    final Random random = Random();
+
+    // Buat list index [0, 1, 2, 3] lalu acak
+    final List<int> indices = List.generate(question.options.length, (i) => i);
+    for (int i = indices.length - 1; i > 0; i--) {
+      final int j = random.nextInt(i + 1);
+      final temp = indices[i];
+      indices[i] = indices[j];
+      indices[j] = temp;
+    }
+
+    // Susun options baru berdasarkan index yang sudah diacak
+    final List<String> shuffledOptions =
+        indices.map((i) => question.options[i]).toList();
+
+    // Temukan posisi baru dari jawaban yang benar
+    final int newCorrectIndex = indices.indexOf(question.correctIndex);
+
+    return QuestionModel(
+      id: question.id,
+      subject: question.subject,
+      grade: question.grade,
+      question: question.question,
+      options: shuffledOptions,
+      correctIndex: newCorrectIndex,
+      explanation: question.explanation,
+      points: question.points,
+      difficulty: question.difficulty,
+    );
   }
 
   List<QuestionModel> _getFallbackQuestions() {
