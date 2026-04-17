@@ -1,15 +1,8 @@
-// lib/services/calendar_service.dart
-//
-// Menyesuaikan dengan struktur Firestore kamu:
-//   users/{uid}/calendar_events/{eventId}  ← event & note milik user
-//   global_events/{eventId}                ← event buatan admin (tampil semua user)
-//
-// Menggunakan FirebaseService & UserModel yang sudah ada di project.
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../screens/calendar/calendar_screen.dart';
+import 'global_event_reminder_service.dart';
 
 class CalendarService {
   CalendarService._();
@@ -92,12 +85,34 @@ class CalendarService {
       'createdBy': _uid,
       'isGlobal': true,
     });
+    // Schedule reminder untuk event baru
+    await GlobalEventReminderService.scheduleForNewEvent(event);
   }
 
+  // Update method deleteGlobalEvent
   Future<void> deleteGlobalEvent(String eventId) async {
+    // Cancel reminder terlebih dahulu
+    await GlobalEventReminderService.cancelEventReminder(eventId);
     await _globalEvents.doc(eventId).delete();
   }
 
+  // Tambahkan method baru untuk update global event
+  Future<void> updateGlobalEvent(CalendarEvent event) async {
+    await _globalEvents.doc(event.id).update({
+      'title': event.title,
+      'description': event.description,
+      'date': Timestamp.fromDate(event.date),
+      'type': event.type.name,
+      'color': event.color.value,
+      'isAllDay': event.isAllDay,
+      'hour': event.time?.hour,
+      'minute': event.time?.minute,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Update reminder
+    await GlobalEventReminderService.updateEventReminder(event);
+  }
   // ─────────────────────────────────────────────
   // KONVERTER  (Dart ↔ Firestore)
   // ─────────────────────────────────────────────

@@ -10,6 +10,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/admin/admin_login_screen.dart';
 import 'services/notification_service.dart';
+import 'services/global_event_reminder_service.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
@@ -21,6 +22,8 @@ void main() async {
   await NotificationService.init();
   await NotificationService.scheduleDailyReminder();
   await NotificationService.scheduleStreakWarning(0);
+  await GlobalEventReminderService.init();
+  await GlobalEventReminderService.scheduleAllGlobalEventReminders();
   await AudioService.init();
   await AudioService.playHomeBgm();
 

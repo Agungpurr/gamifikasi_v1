@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import '../../screens/calendar/calendar_screen.dart'; // CalendarEvent, CalendarEventType
+import '../../screens/calendar/calendar_screen.dart';
 import '../../services/calendar_service.dart';
 import '../../utils/app_theme.dart';
 
@@ -101,22 +101,14 @@ class _AdminGlobalEventsScreenState extends State<AdminGlobalEventsScreen> {
         existing: existing,
         onSave: (ev) async {
           if (existing != null) {
-            // Update
-            await _db.collection('global_events').doc(existing.id).update({
-              'title': ev.title,
-              'description': ev.description,
-              'date': Timestamp.fromDate(ev.date),
-              'type': ev.type.name,
-              'color': ev.color.value,
-              'isAllDay': ev.isAllDay,
-              'hour': ev.time?.hour,
-              'minute': ev.time?.minute,
-            });
+            // ✅ PERBAIKAN: Gunakan CalendarService untuk update
+            await CalendarService.instance.updateGlobalEvent(ev);
           } else {
-            // Create
+            // ✅ SUDAH BENAR: Gunakan CalendarService untuk create
             await CalendarService.instance.addGlobalEvent(ev);
           }
           if (mounted) Navigator.pop(context);
+          setState(() {}); // Refresh UI
         },
       ),
     );
@@ -128,7 +120,7 @@ class _AdminGlobalEventsScreenState extends State<AdminGlobalEventsScreen> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Header
+          // Header (sama seperti sebelumnya)
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -235,7 +227,7 @@ class _AdminGlobalEventsScreenState extends State<AdminGlobalEventsScreen> {
 }
 
 // ─────────────────────────────────────────────
-// EVENT CARD
+// EVENT CARD (SAMA, TIDAK BERUBAH)
 // ─────────────────────────────────────────────
 
 class _EventCard extends StatelessWidget {
@@ -264,7 +256,6 @@ class _EventCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Warna strip kiri
           Container(
             width: 6,
             height: 80,
@@ -277,8 +268,6 @@ class _EventCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-
-          // Icon
           Container(
             width: 44,
             height: 44,
@@ -294,8 +283,6 @@ class _EventCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-
-          // Info
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -344,8 +331,6 @@ class _EventCard extends StatelessWidget {
               ),
             ),
           ),
-
-          // Actions
           Column(
             children: [
               IconButton(
@@ -370,7 +355,7 @@ class _EventCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// FORM BOTTOM SHEET
+// FORM BOTTOM SHEET (SAMA, TIDAK BERUBAH)
 // ─────────────────────────────────────────────
 
 class _GlobalEventForm extends StatefulWidget {
@@ -470,7 +455,6 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
       ),
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          // Handle bar
           Center(
             child: Container(
               width: 40,
@@ -481,7 +465,6 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
             ),
           ),
           const SizedBox(height: 16),
-
           Text(
             widget.existing != null ? 'Edit Global Event' : 'Buat Global Event',
             style: const TextStyle(
@@ -495,8 +478,6 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
             style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 20),
-
-          // Tipe
           Row(children: [
             _tBtn(CalendarEventType.event, '📅 Event', const Color(0xFF7C6FF7)),
             const SizedBox(width: 8),
@@ -504,16 +485,10 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
                 CalendarEventType.note, '🔵 Catatan', const Color(0xFF3BCEAC)),
           ]),
           const SizedBox(height: 14),
-
-          // Judul
           _field(_titleCtrl, 'Judul event...'),
           const SizedBox(height: 10),
-
-          // Deskripsi
           _field(_descCtrl, 'Deskripsi (opsional)...', maxLines: 2),
           const SizedBox(height: 14),
-
-          // Tanggal
           GestureDetector(
             onTap: _pickDate,
             child: Container(
@@ -537,8 +512,6 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
             ),
           ),
           const SizedBox(height: 10),
-
-          // All day / jam
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
@@ -572,8 +545,6 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
             ]),
           ),
           const SizedBox(height: 14),
-
-          // Warna
           Row(children: [
             Text('Warna:',
                 style: TextStyle(
@@ -605,8 +576,6 @@ class _GlobalEventFormState extends State<_GlobalEventForm> {
                 )),
           ]),
           const SizedBox(height: 20),
-
-          // Tombol simpan
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
