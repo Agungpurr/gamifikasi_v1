@@ -13,8 +13,11 @@ class NotificationService {
 
   // Notification IDs
   static const int _idHarian = 1;
-  static const int _idStreakWarning = 2;
-  static const int _idMilestone = 3;
+  static const int _idSiang = 2;
+  static const int _idSore = 3;
+  static const int _idMalam = 4;
+  static const int _idStreakWarning = 5; // Ganti dari 2 karena conflict
+  static const int _idMilestone = 6; // Ganti dari 3 karena conflict
 
   // ═══════════════════════════════════════════
   // INIT
@@ -71,7 +74,7 @@ class NotificationService {
   static const _namaApp = 'Gamifikasi Edukatif';
 
   // ═══════════════════════════════════════════
-  // 1. PENGINGAT HARIAN — jam 07:00
+  // 1. PENGINGAT HARIAN — jam 07:00, 12:00, 17:00, 20:00
   // ═══════════════════════════════════════════
 
   static Future<void> scheduleDailyReminder() async {
@@ -127,21 +130,35 @@ class NotificationService {
     final dayIndex = DateTime.now().weekday - 1; // 0-6
     final (title, body) = messages[dayIndex];
 
-    await _plugin.zonedSchedule(
-      _idHarian,
-      title,
-      body,
-      _nextInstanceOf(7, 0), // 07:00
-      _buildDetails(body: body),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time, // repeat harian
-    );
+    final schedules = [
+      {'hour': 7, 'minute': 0, 'id': _idHarian}, // 07:00
+      {'hour': 12, 'minute': 0, 'id': _idSiang}, // 12:00
+      {'hour': 17, 'minute': 0, 'id': _idSore}, // 17:00
+      {'hour': 20, 'minute': 0, 'id': _idMalam}, // 20:00
+    ];
+
+    for (var schedule in schedules) {
+      // Gunakan 'as int' untuk konversi tipe yang aman
+      final int hour = schedule['hour'] as int;
+      final int minute = schedule['minute'] as int;
+      final int id = schedule['id'] as int;
+
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        _nextTZInstanceOf(hour, minute), // Gunakan fungsi TZDateTime
+        _buildDetails(body: body),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time, // repeat harian
+      );
+    }
   }
 
   // ═══════════════════════════════════════════
-  // 2. STREAK WARNING — jam 07:00 jika belum login
+  // 2. STREAK WARNING — jam 19:00 jika belum login
   //    (dipanggil dari luar setelah cek Firestore)
   // ═══════════════════════════════════════════
 
@@ -152,7 +169,7 @@ class NotificationService {
       _idStreakWarning,
       '⚠️ Streak $currentStreak Hari Mau Hilang!',
       'Kamu belum belajar hari ini. Login sekarang sebelum streak kamu reset! 😱',
-      _nextInstanceOf(19, 0), // 19:00 sebagai peringatan malam
+      _nextTZInstanceOf(19, 0), // 19:00 sebagai peringatan malam
       _buildDetails(
         body:
             'Kamu belum belajar hari ini. Login sekarang sebelum streak kamu reset! 😱',
@@ -208,7 +225,8 @@ class NotificationService {
   // HELPERS
   // ═══════════════════════════════════════════
 
-  static tz.TZDateTime _nextInstanceOf(int hour, int minute) {
+  // Hanya SATU fungsi _nextTZInstanceOf yang mengembalikan TZDateTime
+  static tz.TZDateTime _nextTZInstanceOf(int hour, int minute) {
     final now = tz.TZDateTime.now(tz.local);
     var scheduled =
         tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
