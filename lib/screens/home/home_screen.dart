@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import '../../../services/auth_provider.dart';
+import '../../../models/user_model.dart';
 import '../../../utils/app_theme.dart';
 import 'package:edu_kids_app/screens/quiz/subject_select_screen.dart';
 import 'package:edu_kids_app/screens/leaderboard/leaderboard_screen.dart';
@@ -89,7 +89,6 @@ class _HomeTab extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // App Bar
           SliverAppBar(
             expandedHeight: 220,
             floating: false,
@@ -148,8 +147,6 @@ class _HomeTab extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 16),
-
-                        // XP Bar
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -189,12 +186,10 @@ class _HomeTab extends StatelessWidget {
               ),
             ),
           ),
-
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // Streak & Stats Row
                 Row(
                   children: [
                     _StatCard(
@@ -231,7 +226,6 @@ class _HomeTab extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Quick Quiz
                 Text(
                   'Mulai Belajar! 🚀',
                   style: Theme.of(context).textTheme.titleLarge,
@@ -264,11 +258,12 @@ class _HomeTab extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // Daily Challenge Banner
-                _DailyChallengeBanner()
+                // ✅ Banner sekarang terima user untuk progress nyata
+                _DailyChallengeBanner(user: user)
                     .animate()
                     .slideY(begin: 0.2, delay: 300.ms)
                     .fadeIn(),
+
                 const SizedBox(height: 80),
               ]),
             ),
@@ -392,19 +387,47 @@ class _SubjectCard extends StatelessWidget {
   }
 }
 
+// ✅ Banner sekarang reactive — progress dots update otomatis setelah quiz
 class _DailyChallengeBanner extends StatelessWidget {
+  final UserModel? user;
+
+  const _DailyChallengeBanner({this.user});
+
+  // Hitung berapa kuis yang sudah selesai hari ini
+  int get _todayCount {
+    if (user == null) return 0;
+    final lastDate = user!.lastChallengeDate;
+    if (lastDate == null) return 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final last = DateTime(lastDate.year, lastDate.month, lastDate.day);
+
+    // Jika lastChallengeDate bukan hari ini, reset ke 0
+    return (last == today) ? user!.dailyChallengeCount.clamp(0, 3) : 0;
+  }
+
+  bool get _completed =>
+      user?.dailyChallengeBonused == true && _todayCount >= 3;
+
   @override
   Widget build(BuildContext context) {
+    final count = _todayCount;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFD166), Color(0xFFFF9F43)],
+        gradient: LinearGradient(
+          colors: _completed
+              ? [const Color(0xFF6BCB77), const Color(0xFF4CAF50)]
+              : [const Color(0xFFFFD166), const Color(0xFFFF9F43)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD166).withOpacity(0.4),
+            color:
+                (_completed ? const Color(0xFF6BCB77) : const Color(0xFFFFD166))
+                    .withOpacity(0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -412,33 +435,75 @@ class _DailyChallengeBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('⚡ Tantangan Hari Ini!',
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white)),
-              SizedBox(height: 4),
-              Text('Selesaikan 3 kuis hari ini',
-                  style: TextStyle(color: Colors.white70, fontSize: 13)),
-              SizedBox(height: 4),
-              Text('+50 XP Bonus! 🎁',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _completed ? '✅ Tantangan Selesai!' : '⚡ Tantangan Hari Ini!',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Selesaikan 3 kuis hari ini',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+
+                // ✅ Progress dots — update realtime dari Firestore via AuthProvider
+                Row(
+                  children: List.generate(3, (i) {
+                    final done = i < count;
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color:
+                            done ? Colors.white : Colors.white.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          done ? '✓' : '${i + 1}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color:
+                                done ? const Color(0xFFFF9F43) : Colors.white70,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 8),
+                Text(
+                  _completed ? 'Bonus sudah diterima! 🎉' : '+50 XP Bonus! 🎁',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.3),
               shape: BoxShape.circle,
             ),
-            child: const Text('🏅', style: TextStyle(fontSize: 28)),
+            child: Text(
+              _completed ? '🏆' : '🏅',
+              style: const TextStyle(fontSize: 28),
+            ),
           ),
         ],
       ),

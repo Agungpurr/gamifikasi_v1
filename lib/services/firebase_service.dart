@@ -277,6 +277,68 @@ class FirebaseService {
   }
 
   // ═══════════════════════════════════════════
+  // Event
+  // ═══════════════════════════════════════════
+
+  static Future<Map<String, dynamic>> incrementDailyChallenge(
+      String uid) async {
+    final userRef = _db.collection('users').doc(uid);
+
+    return await _db.runTransaction((transaction) async {
+      final doc = await transaction.get(userRef);
+      if (!doc.exists) return {'bonusGranted': false, 'count': 0};
+
+      final data = doc.data()!;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      // Parse lastChallengeDate
+      final lastRaw = data['lastChallengeDate'];
+      final lastDate = lastRaw != null ? DateTime.parse(lastRaw) : null;
+      final lastDay = lastDate != null
+          ? DateTime(lastDate.year, lastDate.month, lastDate.day)
+          : null;
+
+      // Reset jika hari berbeda
+      int count = (lastDay == today) ? (data['dailyChallengeCount'] ?? 0) : 0;
+      final alreadyBonused =
+          (lastDay == today) && (data['dailyChallengeBonused'] ?? false);
+
+      // Sudah dapat bonus hari ini, tidak tambah lagi
+      if (alreadyBonused) {
+        return {'bonusGranted': false, 'count': count};
+      }
+
+      count += 1;
+      bool bonusGranted = false;
+
+      final Map<String, dynamic> updateData = {
+        'dailyChallengeCount': count,
+        'lastChallengeDate': today.toIso8601String(),
+      };
+
+      if (count >= 3) {
+        // Kasih +50 XP bonus
+        final currentPoints = data['totalPoints'] ?? 0;
+        final newPoints = currentPoints + 50;
+        final newLevel = (newPoints / 100).floor() + 1;
+
+        final subjectProgress =
+            Map<String, int>.from(data['subjectProgress'] ?? {});
+        subjectProgress['bonus'] = (subjectProgress['bonus'] ?? 0) + 50;
+
+        updateData['totalPoints'] = newPoints;
+        updateData['level'] = newLevel;
+        updateData['subjectProgress'] = subjectProgress;
+        updateData['dailyChallengeBonused'] = true;
+        bonusGranted = true;
+      }
+
+      transaction.update(userRef, updateData);
+      return {'bonusGranted': bonusGranted, 'count': count};
+    });
+  }
+  // ═══════════════════════════════════════════
   // SEED DATA (untuk testing)
   // ═══════════════════════════════════════════
 

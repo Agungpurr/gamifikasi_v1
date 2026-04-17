@@ -153,6 +153,21 @@ class AuthProvider extends ChangeNotifier {
     await NotificationService.showMilestoneNotification(streak);
   }
 
+  // event daily
+  Future<bool> incrementDailyChallenge() async {
+    if (_firebaseUser == null) return false;
+
+    final result =
+        await FirebaseService.incrementDailyChallenge(_firebaseUser!.uid);
+    await refreshUserModel();
+
+    final bonusGranted = result['bonusGranted'] as bool;
+    if (bonusGranted) {
+      await AudioService.playLevelUp(); // reuse sound bonus
+    }
+    return bonusGranted;
+  }
+
   Future<void> _checkBadges() async {
     if (_userModel == null || _firebaseUser == null) return;
     final uid = _firebaseUser!.uid;

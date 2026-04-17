@@ -350,10 +350,6 @@ class _QuizScreenState extends State<QuizScreen>
     _timer?.cancel();
     final auth = context.read<AuthProvider>();
 
-    // Hitung nilai 0-100
-    final double nilai =
-        _questions.isEmpty ? 0 : (_correctAnswers / _questions.length * 100);
-
     if (auth.firebaseUser != null) {
       await FirebaseService.saveQuizResult(
         uid: auth.firebaseUser!.uid,
@@ -367,11 +363,40 @@ class _QuizScreenState extends State<QuizScreen>
       );
       await auth.addPoints(_score, widget.subject);
 
-      // Cek Perfect score - semua jawaban benar
+      // ✅ Daily Challenge — panggil setelah addPoints
+      final bonusGranted = await auth.incrementDailyChallenge();
+
+      // ✅ Cek Perfect score
       if (_correctAnswers == _questions.length &&
           !auth.userModel!.badges.contains('perfect_score')) {
         await FirebaseService.addBadge(auth.firebaseUser!.uid, 'perfect_score');
         await auth.refreshUserModel();
+      }
+
+      // ✅ Tampilkan snackbar bonus jika dapat +50 XP
+      if (mounted && bonusGranted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Text('⚡', style: TextStyle(fontSize: 20)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tantangan Hari Ini Selesai! +50 XP Bonus! 🎁',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFFF9F43),
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
       }
     }
 

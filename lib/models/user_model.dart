@@ -5,12 +5,17 @@ class UserModel {
   final int totalPoints;
   final int level;
   final int streakDays;
-  final Map<String, int> subjectProgress; // subject -> score
+  final Map<String, int> subjectProgress;
   final List<String> badges;
   final DateTime lastLoginDate;
   final DateTime createdAt;
   final String? nisn;
   final String? kelas;
+
+  // ✅ Field baru untuk Daily Challenge
+  final int dailyChallengeCount;
+  final bool dailyChallengeBonused;
+  final DateTime? lastChallengeDate;
 
   UserModel({
     required this.uid,
@@ -25,6 +30,10 @@ class UserModel {
     required this.createdAt,
     this.nisn,
     this.kelas,
+    // ✅ Field baru — default aman untuk user lama di Firestore
+    this.dailyChallengeCount = 0,
+    this.dailyChallengeBonused = false,
+    this.lastChallengeDate,
   });
 
   int get xpForCurrentLevel => (level - 1) * 100;
@@ -58,6 +67,12 @@ class UserModel {
           : DateTime.now(),
       nisn: map['nisn'],
       kelas: map['kelas'],
+      // ✅ Parse field baru — null-safe, user lama otomatis dapat default
+      dailyChallengeCount: map['dailyChallengeCount'] ?? 0,
+      dailyChallengeBonused: map['dailyChallengeBonused'] ?? false,
+      lastChallengeDate: map['lastChallengeDate'] != null
+          ? DateTime.tryParse(map['lastChallengeDate'])
+          : null,
     );
   }
 
@@ -75,20 +90,29 @@ class UserModel {
       'createdAt': createdAt.toIso8601String(),
       'nisn': nisn,
       'kelas': kelas,
+      // ✅ Simpan ke Firestore
+      'dailyChallengeCount': dailyChallengeCount,
+      'dailyChallengeBonused': dailyChallengeBonused,
+      'lastChallengeDate': lastChallengeDate?.toIso8601String(),
     };
   }
 
-  UserModel copyWith(
-      {String? username,
-      String? avatarId,
-      int? totalPoints,
-      int? level,
-      int? streakDays,
-      Map<String, int>? subjectProgress,
-      List<String>? badges,
-      DateTime? lastLoginDate,
-      String? nisn,
-      String? kelas}) {
+  UserModel copyWith({
+    String? username,
+    String? avatarId,
+    int? totalPoints,
+    int? level,
+    int? streakDays,
+    Map<String, int>? subjectProgress,
+    List<String>? badges,
+    DateTime? lastLoginDate,
+    String? nisn,
+    String? kelas,
+    // ✅ Field baru di copyWith
+    int? dailyChallengeCount,
+    bool? dailyChallengeBonused,
+    DateTime? lastChallengeDate,
+  }) {
     return UserModel(
       uid: uid,
       username: username ?? this.username,
@@ -102,6 +126,11 @@ class UserModel {
       createdAt: createdAt,
       nisn: nisn ?? this.nisn,
       kelas: kelas ?? this.kelas,
+      // ✅
+      dailyChallengeCount: dailyChallengeCount ?? this.dailyChallengeCount,
+      dailyChallengeBonused:
+          dailyChallengeBonused ?? this.dailyChallengeBonused,
+      lastChallengeDate: lastChallengeDate ?? this.lastChallengeDate,
     );
   }
 }
